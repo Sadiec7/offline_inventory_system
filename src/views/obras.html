@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Obras</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <!-- Contenido -->
+  <div class="flex max-w-4xl mx-auto mt-6 bg-white p-6 rounded shadow">
+    <!-- Lista lateral -->
+    <div class="w-1/3 border-r pr-4">
+      <h3 class="font-bold mb-2">Lista de Obras</h3>
+      <ul id="listaObras" class="space-y-1 h-64 overflow-auto text-sm text-gray-700">
+        <li id="mensaje-vacio" class="italic text-gray-500">Cargando obras...</li>
+      </ul>
+    </div>
+
+    <!-- Formulario -->
+    <div class="w-2/3 pl-4">
+      <div class="flex mb-4 space-x-2">
+        <button id="nuevo" class="bg-green-600 text-white px-3 py-1 rounded">Nuevo</button>
+        <button id="guardar" class="bg-blue-600 text-white px-3 py-1 rounded">Guardar</button>
+      </div>
+      <input id="codigo" placeholder="Código" class="w-full mb-2 p-2 border rounded" />
+      <input id="nombre" placeholder="Nombre" class="w-full mb-2 p-2 border rounded" />
+      <input id="localidad" placeholder="Localidad" class="w-full mb-2 p-2 border rounded" />
+      <input id="municipio" placeholder="Municipio" class="w-full mb-2 p-2 border rounded" />
+      <input id="presupuesto" placeholder="Presupuesto" class="w-full p-2 border rounded" />
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script defer src="js/obrasView.js"></script>
+</body>
+</html>

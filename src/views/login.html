@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="es"><head>
+  <meta charset="UTF-8"/><title>Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="js/loginView.js"></script>
+</head><body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow w-80">
+    <h2 class="text-2xl mb-4 text-center">Iniciar Sesión</h2>
+    <input id="username" placeholder="Usuario" class="w-full mb-3 p-2 border rounded"/>
+    <input id="password" type="password" placeholder="Contraseña" class="w-full mb-3 p-2 border rounded"/>
+    <button id="btn-login" class="w-full bg-blue-600 text-white py-2 rounded">Ingresar</button>
+    <p id="login-error" class="hidden text-red-600 mt-2 text-center">Credenciales inválidas</p>
+  </div>
+</body></html>

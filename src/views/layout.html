@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel Principal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="js/layoutView.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <header class="bg-green-900 text-white p-3 flex justify-between items-center">
+    <span class="font-bold">Constructora e Inmobiliaria CRONOS</span>
+    <nav class="space-x-4">
+      <button onclick="navegar('obras')">Obras</button>
+      <button onclick="navegar('insumos')">Insumos</button>
+      <button onclick="cerrarSesion()">Salir</button>
+    </nav>
+  </header>
+  <main id="contenido" class="p-4"></main>
+</body>
+</html>

@@ -1,31 +1,13 @@
 {
   "name": "offline_inventory_system",
   "version": "1.0.0",
-  "description": "",
   "main": "main.js",
   "scripts": {
-    "dev": "electron .",
-    "start": "npm run dev"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.4",
-    "autoprefixer": "^10.4.21",
-    "electron": "^36.3.2",
-    "electron-builder": "^26.0.12",
-    "electron-rebuild": "^3.2.9",
-    "nodemon": "^3.1.10",
-    "postcss": "^8.5.4",
-    "tailwindcss": "^4.1.8"
+    "start": "electron ."
   },
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
-    "chart.js": "^4.4.9",
-    "exceljs": "^4.4.0",
-    "sqlite3": "^5.1.7",
-    "vue": "^3.5.16"
+    "electron": "^28.1.0",
+    "sqlite3": "^5.1.6",
+    "xlsx": "^0.18.5"
   }
 }
