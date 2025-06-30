@@ -21,6 +21,33 @@ db.serialize(() => {
     presupuesto REAL DEFAULT 0
   )`);
 
+  db.run(`ALTER TABLE obras ADD COLUMN archivo TEXT DEFAULT 'RECIENTE'`, (err) => {
+  if (err && !err.message.includes("duplicate column")) {
+    console.error("Error agregando columna 'archivo':", err.message);
+  }
+});
+
+db.run(`DROP TABLE COMPRAS`);
+
+
+  //compraS
+// Tabla de compras con clave foránea a insumos
+db.run(`CREATE TABLE IF NOT EXISTS compras (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  obra_id INTEGER NOT NULL,
+  insumo_id INTEGER NOT NULL,
+  nombre TEXT,
+  fecha TEXT,
+  pedido TEXT,
+  cantidad REAL,
+  precio REAL,
+  importe REAL,
+  proveedor TEXT,
+  FOREIGN KEY (obra_id) REFERENCES obras(id),
+  FOREIGN KEY (insumo_id) REFERENCES insumos(id)
+)`);
+
+
   const obras = [
     ['OB001', 'Pavimentación Calle 5', 'Centro', 'Querétaro', 1500000],
     ['OB002', 'Rehabilitación Parque', 'Santa Rosa', 'Querétaro', 850000],

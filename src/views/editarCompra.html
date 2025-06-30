@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Compra</title>
+  <script defer src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div id="formulario" class="max-w-lg mx-auto bg-white p-6 rounded shadow">
+    Cargando formulario...
+  </div>
+  <script>
+    const compraCtrl = require('../controllers/compraController');
+    const params = new URLSearchParams(location.search);
+    const id = parseInt(params.get('id'), 10);
+    compraCtrl.listar((err, filas) => {
+      const cont = document.getElementById('formulario');
+      if (err) return cont.innerHTML = '<p class="text-red-500">Error al cargar datos</p>';
+      const c = filas.find(x => x.id === id);
+      if (!c) return cont.innerHTML = '<p>Compra no encontrada</p>';
+
+      cont.innerHTML = `
+        <h1 class="text-2xl mb-4">Editar Compra #${c.id}</h1>
+        <label class="block mb-2">
+          Fecha:
+          <input id="fecha" type="date" value="${c.fecha}"
+                 class="w-full p-2 border rounded"/>
+        </label>
+        <!-- Aquí podrías añadir selects para obra_id e insumo_id si quieres permitir cambiarlos -->
+        <label class="block mb-2">
+          Cantidad:
+          <input id="cantidad" type="number" step="0.01" value="${c.cantidad}"
+                 class="w-full p-2 border rounded"/>
+        </label>
+        <label class="block mb-2">
+          Precio:
+          <input id="precio" type="number" step="0.01" value="${c.precio}"
+                 class="w-full p-2 border rounded"/>
+        </label>
+        <label class="block mb-2">
+          Importe:
+          <input id="importe" type="number" step="0.01" value="${c.importe}"
+                 class="w-full p-2 border rounded"/>
+        </label>
+        <label class="block mb-2">
+          Proveedor:
+          <input id="proveedor" type="text" value="${c.proveedor}"
+                 class="w-full p-2 border rounded"/>
+        </label>
+        <button id="guardar"
+                class="bg-blue-600 text-white px-4 py-2 rounded mt-4">
+          Actualizar
+        </button>
+      `;
+
+      document.getElementById('guardar').onclick = () => {
+        const updated = {
+          id: c.id,
+          fecha:     document.getElementById('fecha').value,
+          obra_id:   c.obra_id,
+          insumo_id: c.insumo_id,
+          cantidad:  parseFloat(document.getElementById('cantidad').value),
+          precio:    parseFloat(document.getElementById('precio').value),
+          importe:   parseFloat(document.getElementById('importe').value),
+          proveedor: document.getElementById('proveedor').value.trim()
+        };
+        compraCtrl.editar(updated.id, updated, err => {
+          if (err) return alert('Error al actualizar');
+          alert('Compra actualizada exitosamente');
+          window.relocation = 'compras.html';
+        });
+      };
+    });
+  </script>
+</body>
+</html>

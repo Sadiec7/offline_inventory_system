@@ -9,8 +9,7 @@ window.initObrasView = function () {
   function cargarLista() {
     console.log('[obrasView.js] ejecutando obraController.listar...');
     obraController.listar((err, obras) => {
-      console.log('[obrasView.js] resultado de listar:', { err, obras });
-
+    
       const ul = document.getElementById('listaObras');
       if (!ul) {
         console.warn('[obrasView.js] No se encontró #listaObras');
@@ -41,6 +40,8 @@ window.initObrasView = function () {
           ['codigo', 'nombre', 'localidad', 'municipio', 'presupuesto'].forEach(id => {
             document.getElementById(id).value = o[id] || '';
           });
+          const archivoSel = document.getElementById('archivo');
+          if (archivoSel) archivoSel.value = o.archivo || 'RECIENTE';
         };
         li.querySelector('button').onclick = e => {
           e.stopPropagation();
@@ -60,6 +61,7 @@ window.initObrasView = function () {
         id: idSel,
         codigo: document.getElementById('codigo').value,
         nombre: document.getElementById('nombre').value,
+        archivo: document.getElementById('archivo').value,
         localidad: document.getElementById('localidad').value,
         municipio: document.getElementById('municipio').value,
         presupuesto: parseFloat(document.getElementById('presupuesto').value) || 0
@@ -69,6 +71,8 @@ window.initObrasView = function () {
         ['codigo', 'nombre', 'localidad', 'municipio', 'presupuesto'].forEach(id => {
           document.getElementById(id).value = '';
         });
+        const archivoSel = document.getElementById('archivo');
+        if (archivoSel) archivoSel.value = 'RECIENTE';
         cargarLista();
       });
     };
@@ -78,6 +82,8 @@ window.initObrasView = function () {
       ['codigo', 'nombre', 'localidad', 'municipio', 'presupuesto'].forEach(id => {
         document.getElementById(id).value = '';
       });
+      const archivoSel = document.getElementById('archivo');
+      if (archivoSel) archivoSel.value = 'RECIENTE';
     };
   } else {
     console.warn('[obrasView.js] No se encontraron los botones "guardar" o "nuevo"');
