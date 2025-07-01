@@ -54,4 +54,4 @@ function remove(id, cb) {
   db.run(`DELETE FROM compras WHERE id = ?`, [id], cb);
 }
 
-module.exports = { getAll, getByObra, insert, delete: remove };
+module.exports = { getAll, getByObra, insert, delete: remove, update };

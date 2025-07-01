@@ -1,75 +1,152 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Editar Compra</title>
   <script defer src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div id="formulario" class="max-w-lg mx-auto bg-white p-6 rounded shadow">
-    Cargando formulario...
+  <div id="formEditar" class="max-w-lg mx-auto bg-white p-6 rounded shadow">
+    <p>Cargando formulario de edición…</p>
   </div>
+
   <script>
-    const compraCtrl = require('../controllers/compraController');
-    const params = new URLSearchParams(location.search);
-    const id = parseInt(params.get('id'), 10);
-    compraCtrl.listar((err, filas) => {
-      const cont = document.getElementById('formulario');
-      if (err) return cont.innerHTML = '<p class="text-red-500">Error al cargar datos</p>';
-      const c = filas.find(x => x.id === id);
-      if (!c) return cont.innerHTML = '<p>Compra no encontrada</p>';
+    window.addEventListener('DOMContentLoaded', () => {
+      const compraCtrl = require('../controllers/compraController');
+      const obraCtrl   = require('../controllers/obraController');
+      const insumoCtrl = require('../controllers/insumoController');
+      const cont       = document.getElementById('formEditar');
+      const params     = new URLSearchParams(window.location.search);
+      const id         = parseInt(params.get('id'), 10);
 
-      cont.innerHTML = `
-        <h1 class="text-2xl mb-4">Editar Compra #${c.id}</h1>
-        <label class="block mb-2">
-          Fecha:
-          <input id="fecha" type="date" value="${c.fecha}"
-                 class="w-full p-2 border rounded"/>
-        </label>
-        <!-- Aquí podrías añadir selects para obra_id e insumo_id si quieres permitir cambiarlos -->
-        <label class="block mb-2">
-          Cantidad:
-          <input id="cantidad" type="number" step="0.01" value="${c.cantidad}"
-                 class="w-full p-2 border rounded"/>
-        </label>
-        <label class="block mb-2">
-          Precio:
-          <input id="precio" type="number" step="0.01" value="${c.precio}"
-                 class="w-full p-2 border rounded"/>
-        </label>
-        <label class="block mb-2">
-          Importe:
-          <input id="importe" type="number" step="0.01" value="${c.importe}"
-                 class="w-full p-2 border rounded"/>
-        </label>
-        <label class="block mb-2">
-          Proveedor:
-          <input id="proveedor" type="text" value="${c.proveedor}"
-                 class="w-full p-2 border rounded"/>
-        </label>
-        <button id="guardar"
-                class="bg-blue-600 text-white px-4 py-2 rounded mt-4">
-          Actualizar
-        </button>
-      `;
+      // 1) Cargar obras e insumos
+      obraCtrl.listar((errOb, obras) => {
+        if (errOb) {
+          cont.innerHTML = '<p class="text-red-500">Error al cargar obras</p>';
+          return;
+        }
+        insumoCtrl.listar((errIn, insumos) => {
+          if (errIn) {
+            cont.innerHTML = '<p class="text-red-500">Error al cargar insumos</p>';
+            return;
+          }
+          // 2) Cargar la compra a editar
+          compraCtrl.listar((errC, compras) => {
+            if (errC) {
+              cont.innerHTML = '<p class="text-red-500">Error al cargar compra</p>';
+              return;
+            }
+            const c = (compras || []).find(x => x.id === id);
+            if (!c) {
+              cont.innerHTML = '<p class="text-red-500">Compra no encontrada.</p>';
+              return;
+            }
 
-      document.getElementById('guardar').onclick = () => {
-        const updated = {
-          id: c.id,
-          fecha:     document.getElementById('fecha').value,
-          obra_id:   c.obra_id,
-          insumo_id: c.insumo_id,
-          cantidad:  parseFloat(document.getElementById('cantidad').value),
-          precio:    parseFloat(document.getElementById('precio').value),
-          importe:   parseFloat(document.getElementById('importe').value),
-          proveedor: document.getElementById('proveedor').value.trim()
-        };
-        compraCtrl.editar(updated.id, updated, err => {
-          if (err) return alert('Error al actualizar');
-          alert('Compra actualizada exitosamente');
-          window.relocation = 'compras.html';
+            // 3) Renderizar formulario con valores actuales
+            cont.innerHTML = `
+              <h1 class="text-2xl font-bold mb-4">Editar Compra #${c.id}</h1>
+              
+              <label class="block mb-2">
+                Obra:
+                <select id="edit_obra" class="w-full p-2 border rounded mb-4">
+                  ${obras.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('')}
+                </select>
+              </label>
+
+              <label class="block mb-2">
+                Insumo:
+                <select id="edit_insumo" class="w-full p-2 border rounded mb-4">
+                  ${insumos.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('')}
+                </select>
+              </label>
+
+              <label class="block mb-2">
+                Nombre:
+                <input id="edit_nombre" type="text" value="${c.nombre}"
+                       class="w-full p-2 border rounded mb-4"/>
+              </label>
+
+              <label class="block mb-2">
+                Fecha:
+                <input id="edit_fecha" type="date" value="${c.fecha}"
+                       class="w-full p-2 border rounded mb-4"/>
+              </label>
+
+              <label class="block mb-2">
+                Pedido:
+                <input id="edit_pedido" type="text" value="${c.pedido}"
+                       class="w-full p-2 border rounded mb-4"/>
+              </label>
+
+              <div class="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label class="block mb-1">Cantidad:</label>
+                  <input id="edit_cantidad" type="number" step="0.01" value="${c.cantidad}"
+                         class="w-full p-2 border rounded"/>
+                </div>
+                <div>
+                  <label class="block mb-1">Precio:</label>
+                  <input id="edit_precio" type="number" step="0.01" value="${c.precio}"
+                         class="w-full p-2 border rounded"/>
+                </div>
+                <div>
+                  <label class="block mb-1">Importe:</label>
+                  <input id="edit_importe" type="number" step="0.01" value="${c.importe}"
+                         class="w-full p-2 border rounded"/>
+                </div>
+              </div>
+
+              <label class="block mb-4">
+                Proveedor:
+                <input id="edit_proveedor" type="text" value="${c.proveedor}"
+                       class="w-full p-2 border rounded"/>
+              </label>
+
+              <div class="flex justify-end space-x-2">
+                <button id="cancelBtn"
+                        class="bg-gray-400 text-white px-4 py-2 rounded">
+                  Cancelar
+                </button>
+                <button id="updateBtn"
+                        class="bg-blue-600 text-white px-4 py-2 rounded">
+                  Actualizar
+                </button>
+              </div>
+            `;
+
+            // Preseleccionar opciones actuales
+            document.getElementById('edit_obra').value   = c.obra_id;
+            document.getElementById('edit_insumo').value = c.insumo_id;
+
+            // 4) Asociar acciones a botones
+            document.getElementById('cancelBtn').onclick = () => {
+              window.history.back();
+            };
+            document.getElementById('updateBtn').onclick = () => {
+              const updatedData = {
+                obra_id:   parseInt(document.getElementById('edit_obra').value, 10),
+                insumo_id: parseInt(document.getElementById('edit_insumo').value, 10),
+                nombre:    document.getElementById('edit_nombre').value.trim(),
+                fecha:     document.getElementById('edit_fecha').value,
+                pedido:    document.getElementById('edit_pedido').value.trim(),
+                cantidad:  parseFloat(document.getElementById('edit_cantidad').value) || 0,
+                precio:    parseFloat(document.getElementById('edit_precio').value)   || 0,
+                importe:   parseFloat(document.getElementById('edit_importe').value)  || 0,
+                proveedor: document.getElementById('edit_proveedor').value.trim()
+              };
+              // Llamamos al método editar pasando id y los nuevos datos
+              compraCtrl.editar(c.id, updatedData, err => {
+                if (err) {
+                  alert('Error al actualizar compra');
+                } else {
+                  alert('Compra actualizada exitosamente');
+                  window.history.back();
+                }
+              });
+            };
+          });
         });
-      };
+      });
     });
   </script>
 </body>

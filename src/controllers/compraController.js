@@ -32,4 +32,4 @@ function eliminar(id, cb) {
   compraModel.delete(id, cb);
 }
 
-module.exports = { listar, listarPorObra, guardar, eliminar };
+module.exports = { listar, listarPorObra, guardar, eliminar, editar};
