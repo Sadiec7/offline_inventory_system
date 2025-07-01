@@ -9,5 +9,9 @@
     "electron": "^28.1.0",
     "sqlite3": "^5.1.6",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6"
   }
 }
