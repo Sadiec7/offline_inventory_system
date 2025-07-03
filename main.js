@@ -13,7 +13,7 @@ function createWindow() {
   });
 
   win.webContents.openDevTools();
-  win.loadFile(path.join(__dirname, 'src', 'views', 'login.html'));
+  win.loadFile(path.join(__dirname, 'src', 'views', 'layout.html'));
 }
 
 app.whenReady().then(createWindow);
