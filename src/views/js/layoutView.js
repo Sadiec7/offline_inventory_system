@@ -16,8 +16,9 @@ function navegar(seccion) {
     const scriptId = `view-${seccion}`;
     // Si ya cargamos el script, solo invocamos initXView
     if (document.getElementById(scriptId)) {
-      if (window[`init${capitalize(seccion)}View`]) {
-        window[`init${capitalize(seccion)}View`]();
+      const initFn = `init${capitalize(seccion)}View`;
+      if (typeof window[initFn] === 'function') {
+        window[initFn]();
       }
     } else {
       // Cargamos el script de la vista
@@ -26,10 +27,11 @@ function navegar(seccion) {
       scr.defer = true;
       scr.id    = scriptId;
       scr.onload = () => {
-        if (window[`init${capitalize(seccion)}View`]) {
-          window[`init${capitalize(seccion)}View`]();
+        const initFn = `init${capitalize(seccion)}View`;
+        if (typeof window[initFn] === 'function') {
+          window[initFn]();
         } else {
-          console.warn(`init${capitalize(seccion)}View no está definido`);
+          console.warn(`${initFn} no está definido`);
         }
       };
       document.body.appendChild(scr);
@@ -47,21 +49,28 @@ function cerrarSesion() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  // 🚫 No ejecutar en la pantalla de login
+  if (window.location.pathname.includes('login.html')) return;
+
   // 1) Revisar si hay usuario logueado y es superuser
   let user = null;
   try {
     user = JSON.parse(localStorage.getItem('currentUser'));
   } catch {}
+
   if (user && user.superuser === 1) {
     const nav = document.getElementById('main-nav');
-    const btn = document.createElement('button');
-    btn.textContent = 'Usuarios';
-    btn.className   = 'hover:underline';
-    btn.onclick     = () => navegar('usuarios');
-    // Insertarlo antes del botón Salir
-    const salir = Array.from(nav.children)
-                       .find(el => el.textContent === 'Salir');
-    nav.insertBefore(btn, salir);
+    if (nav) {
+      const btn = document.createElement('button');
+      btn.textContent = 'Usuarios';
+      btn.className   = 'hover:underline';
+      btn.onclick     = () => navegar('usuarios');
+
+      const salir = Array.from(nav.children).find(el => el.textContent === 'Salir');
+      nav.insertBefore(btn, salir);
+    } else {
+      console.warn('[layoutView] #main-nav no encontrado');
+    }
   }
 
   // 2) Iniciar en la sección Obras

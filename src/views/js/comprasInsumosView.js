@@ -1,4 +1,3 @@
-// comprasInsumosView.js
 // Vista MVC en Electron sin preload
 // Exponer initComprasInsumosView para layoutView.js
 window.initComprasInsumosView = function() {
@@ -6,7 +5,6 @@ window.initComprasInsumosView = function() {
   const obraCtrl   = require('../controllers/obraController');
   const insumoCtrl = require('../controllers/insumoController');
 
-  // Elementos del DOM
   const obraSel       = document.getElementById('obra_id');
   const insumoSel     = document.getElementById('insumo_id');
   const listaEl       = document.getElementById('listaCompras');
@@ -19,18 +17,21 @@ window.initComprasInsumosView = function() {
   const contenidoEd   = document.getElementById('contenidoEditar');
   const cerrarEd      = document.getElementById('cerrarEditar');
 
-  // Asociar eventos
+  const inputBuscar   = document.getElementById('buscarCompra');
+  const btnBuscar     = document.getElementById('btnBuscar');
+  const datalist      = document.getElementById('comprasData');
+
+  let comprasGlobal = [];
+
   cerrarDet.onclick   = () => modalDet.classList.add('hidden');
   cerrarEd.onclick    = () => modalEd.classList.add('hidden');
   btnNuevo.onclick    = limpiar;
   btnGuardar.onclick  = guardar;
 
-  // Carga inicial
   cargarObras();
   cargarInsumos();
   cargarCompras();
 
-  // --- Funciones de carga ---
   function cargarObras() {
     obraCtrl.listar((err, filas) => {
       obraSel.innerHTML = (Array.isArray(filas) && filas.length)
@@ -54,28 +55,48 @@ window.initComprasInsumosView = function() {
         return;
       }
       const data = Array.isArray(filas) ? filas : [];
-      if (!data.length) {
-        listaEl.innerHTML = `<li class="p-4">No hay compras</li>`;
-        return;
+      comprasGlobal = data;
+      renderCompras(data);
+
+      if (datalist) {
+        datalist.innerHTML = data.map(c => `<option value="${c.nombre}">`).join('');
       }
-      listaEl.innerHTML = data.map(c => `
-        <li class="bg-white rounded-lg shadow p-4 mb-4 flex justify-between hover:shadow-md transition">
-          <div class="flex-1 cursor-pointer" onclick="showDetalle(${c.id})">
-            <div class="font-semibold">${c.fecha}</div>
-            <div class="text-sm">Obra: ${c.obra_id} • Insumo: ${c.insumo_id}</div>
-            <div class="text-sm">${c.cantidad}×${c.precio} = ${c.importe}</div>
-            <div class="text-sm">Proveedor: ${c.proveedor}</div>
-          </div>
-          <div class="ml-4 flex flex-col space-y-2">
-            <button class="text-green-600 hover:text-green-800" onclick="showEditar(${c.id})">Editar</button>
-            <button class="text-red-500 hover:text-red-700" data-id="${c.id}">Eliminar</button>
-          </div>
-        </li>
-      `).join('');
-      listaEl.querySelectorAll('button[data-id]').forEach(b => {
-        b.onclick = () => compraCtrl.eliminar(Number(b.dataset.id), () => cargarCompras());
-      });
     });
+  }
+
+  function renderCompras(data) {
+    if (!data.length) {
+      listaEl.innerHTML = `<li class="p-4">No hay compras</li>`;
+      return;
+    }
+
+    listaEl.innerHTML = data.map(c => `
+      <li class="bg-white rounded-lg shadow p-4 mb-4 flex justify-between hover:shadow-md transition">
+        <div class="flex-1 cursor-pointer" onclick="showDetalle(${c.id})">
+          <div class="font-semibold">${c.fecha}</div>
+          <div class="text-sm">Obra: ${c.obra_id} • Insumo: ${c.insumo_id}</div>
+          <div class="text-sm">${c.cantidad}×${c.precio} = ${c.importe}</div>
+          <div class="text-sm">Proveedor: ${c.proveedor}</div>
+        </div>
+        <div class="ml-4 flex flex-col space-y-2">
+          <button class="text-green-600 hover:text-green-800" onclick="showEditar(${c.id})">Editar</button>
+          <button class="text-red-500 hover:text-red-700" data-id="${c.id}">Eliminar</button>
+        </div>
+      </li>
+    `).join('');
+
+    listaEl.querySelectorAll('button[data-id]').forEach(b => {
+      b.onclick = () => compraCtrl.eliminar(Number(b.dataset.id), () => cargarCompras());
+    });
+  }
+
+  // --- Buscar por nombre interno ---
+  if (btnBuscar && inputBuscar) {
+    btnBuscar.onclick = () => {
+      const filtro = inputBuscar.value.toLowerCase();
+      const filtrados = comprasGlobal.filter(c => c.nombre?.toLowerCase().includes(filtro));
+      renderCompras(filtrados);
+    };
   }
 
   // --- Modal Detalle ---
@@ -191,7 +212,6 @@ window.initComprasInsumosView = function() {
     modalEd.classList.remove('hidden');
   };
 
-  // --- Crear y limpiar ---
   function guardar() {
     const data = {
       obra_id:   +obraSel.value,

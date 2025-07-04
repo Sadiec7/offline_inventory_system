@@ -6,58 +6,73 @@
   <link rel="stylesheet" href="./css/tailwind.css">
   <script defer src="js/comprasInsumosView.js"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <div class="max-w-7xl mx-auto p-6 flex-1 flex flex-col md:flex-row">
+    <div class="bg-white shadow-xl rounded-lg flex-1 flex flex-col md:flex-row overflow-hidden">
 
-  <div class="flex max-w-5xl mx-auto mt-6 bg-white p-6 rounded shadow">
-    <!-- Lista de compras -->
-    <div class="w-1/3 border-r pr-4">
-      <h3 class="font-bold mb-2">Compras Registradas</h3>
-      <ul id="listaCompras" class="space-y-2 h-64 overflow-auto text-sm">
-        <li>Cargando compras…</li>
-      </ul>
-    </div>
-    <!-- Formulario nueva compra -->
-    <div class="w-2/3 pl-4">
-      <div class="flex mb-4 space-x-2">
-        <button id="nuevo"  class="bg-green-600 text-white px-3 py-1 rounded">Nuevo</button>
-        <button id="guardar" class="bg-blue-600 text-white px-3 py-1 rounded">Guardar</button>
-      </div>
-      <label class="block mb-1 font-medium">Obra:</label>
-      <select id="obra_id" class="w-full mb-2 p-2 border rounded">
-        <option disabled selected>Cargando obras…</option>
-      </select>
+      <!-- Lista de compras -->
+      <aside class="w-full md:w-1/4 bg-gray-50 p-6 border-b md:border-b-0 md:border-r border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Compras Registradas</h3>
+        <ul id="listaCompras" class="space-y-2 overflow-auto h-full text-sm">
+          <li>Cargando compras…</li>
+        </ul>
+      </aside>
 
-      <label class="block mb-1 font-medium">Insumo:</label>
-      <select id="insumo_id" class="w-full mb-2 p-2 border rounded">
-        <option disabled selected>Cargando insumos…</option>
-      </select>
-
-      <label class="block mb-1 font-medium">Nombre:</label>
-      <input id="nombre" placeholder="Nombre interno" class="w-full mb-2 p-2 border rounded"/>
-
-      <label class="block mb-1 font-medium">Fecha:</label>
-      <input id="fecha" type="date" class="w-full mb-2 p-2 border rounded"/>
-
-      <label class="block mb-1 font-medium">Pedido:</label>
-      <input id="pedido" placeholder="Pedido #" class="w-full mb-2 p-2 border rounded"/>
-
-      <div class="flex space-x-2 mb-2">
-        <div class="flex-1">
-          <label class="block mb-1 font-medium">Cantidad:</label>
-          <input id="cantidad" type="number" step="0.01" class="w-full p-2 border rounded"/>
+      <!-- Formulario nueva compra -->
+      <section class="w-full md:flex-1 p-6 overflow-auto relative">
+        <!-- Buscador global -->
+        <div class="flex items-center gap-2 mb-6">
+          <input list="comprasData" id="buscarCompra" placeholder="Buscar por nombre interno..." class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="off" />
+          <datalist id="comprasData"></datalist>
+          <button id="btnBuscar" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+          </button>
         </div>
-        <div class="flex-1">
-          <label class="block mb-1 font-medium">Precio:</label>
-          <input id="precio" type="number" step="0.01" class="w-full p-2 border rounded"/>
-        </div>
-        <div class="flex-1">
-          <label class="block mb-1 font-medium">Importe:</label>
-          <input id="importe" type="number" step="0.01" class="w-full p-2 border rounded"/>
-        </div>
-      </div>
 
-      <label class="block mb-1 font-medium">Proveedor:</label>
-      <input id="proveedor" placeholder="Proveedor" class="w-full p-2 border rounded"/>
+        <div class="flex flex-col sm:flex-row justify-end gap-4 mb-6">
+          <button id="nuevo" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg transition">Nuevo</button>
+          <button id="guardar" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition">Guardar</button>
+        </div>
+
+        <label class="block mb-1 font-medium">Obra:</label>
+        <select id="obra_id" class="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400">
+          <option disabled selected>Cargando obras…</option>
+        </select>
+
+        <label class="block mb-1 font-medium">Insumo:</label>
+        <select id="insumo_id" class="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400">
+          <option disabled selected>Cargando insumos…</option>
+        </select>
+
+        <label class="block mb-1 font-medium">Nombre:</label>
+        <input id="nombre" placeholder="Nombre interno" class="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+
+        <label class="block mb-1 font-medium">Fecha:</label>
+        <input id="fecha" type="date" class="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+
+        <label class="block mb-1 font-medium">Pedido:</label>
+        <input id="pedido" placeholder="Pedido #" class="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label class="block mb-1 font-medium">Cantidad:</label>
+            <input id="cantidad" type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+          </div>
+          <div>
+            <label class="block mb-1 font-medium">Precio:</label>
+            <input id="precio" type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+          </div>
+          <div>
+            <label class="block mb-1 font-medium">Importe:</label>
+            <input id="importe" type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+          </div>
+        </div>
+
+        <label class="block mb-1 font-medium">Proveedor:</label>
+        <input id="proveedor" placeholder="Proveedor" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"/>
+      </section>
     </div>
   </div>
 
@@ -65,9 +80,7 @@
   <div id="modalDetalle" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="bg-white w-1/2 p-6 rounded-lg shadow-lg relative">
       <button id="cerrarDetalle" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">✖</button>
-      <div id="contenidoDetalle" class="space-y-2 text-gray-700">
-        Cargando detalle…
-      </div>
+      <div id="contenidoDetalle" class="space-y-2 text-gray-700">Cargando detalle…</div>
     </div>
   </div>
 
@@ -75,11 +88,8 @@
   <div id="modalEditar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="bg-white w-1/2 p-6 rounded-lg shadow-lg relative">
       <button id="cerrarEditar" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">✖</button>
-      <div id="contenidoEditar" class="space-y-2 text-gray-700">
-        Cargando formulario de edición…
-      </div>
+      <div id="contenidoEditar" class="space-y-2 text-gray-700">Cargando formulario de edición…</div>
     </div>
   </div>
-
 </body>
 </html>
