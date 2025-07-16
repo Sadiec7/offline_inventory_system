@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Detalle de Compra</title>
-<link rel="stylesheet" href="./css/tailwind.css">
+  <link rel="stylesheet" href="./css/tailwind.css">
 </head>
 <body class="bg-gray-100 p-6">
   <div id="detalle" class="max-w-lg mx-auto bg-white p-6 rounded shadow">
@@ -12,43 +12,56 @@
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      const compraCtrl = require('../controllers/compraController');
-      const obraCtrl   = require('../controllers/obraController');
-      const insumoCtrl = require('../controllers/insumoController');
-      const cont       = document.getElementById('detalle');
-      const params     = new URLSearchParams(window.location.search);
-      const id         = parseInt(params.get('id'), 10);
+      const compraCtrl    = require('../controllers/compraController');
+      const obraCtrl      = require('../controllers/obraController');
+      const insumoCtrl    = require('../controllers/insumoController');
+      const proveedorCtrl = require('../controllers/proveedorController');
+      const cont          = document.getElementById('detalle');
+      const params        = new URLSearchParams(window.location.search);
+      const id            = parseInt(params.get('id'), 10);
 
       // 1) Traer la compra
       compraCtrl.listar((errC, compras) => {
-        if (errC) return cont.innerHTML = '<p class="text-red-500">Error al cargar compra</p>';
-        const c = (compras||[]).find(x => x.id === id);
-        if (!c)    return cont.innerHTML = '<p class="text-red-500">Compra no encontrada.</p>';
+        if (errC) {
+          cont.innerHTML = '<p class="text-red-500">Error al cargar compra</p>';
+          return;
+        }
+        const c = (compras || []).find(x => x.id === id);
+        if (!c) {
+          cont.innerHTML = '<p class="text-red-500">Compra no encontrada.</p>';
+          return;
+        }
 
-        // 2) Traer obras para obtener nombre
-        obraCtrl.listar((errO, obras) => {
-          if (errO) return cont.innerHTML = '<p class="text-red-500">Error al cargar obras</p>';
-          const obra = (obras||[]).find(o => o.id === c.obra_id);
-          const obraNombre = obra ? obra.nombre : 'Desconocida';
+        // 2) Traer datos relacionados en paralelo
+        Promise.all([
+          obraCtrl.listarAsync?.() || new Promise((res, rej) => obraCtrl.listar((e, r) => e ? rej(e) : res(r))),
+          insumoCtrl.listarAsync?.() || new Promise((res, rej) => insumoCtrl.listar((e, r) => e ? rej(e) : res(r))),
+          proveedorCtrl.listar() // asume que devuelve Promise
+        ])
+        .then(([obras, insumos, proveedores]) => {
+          const obra    = (obras || []).find(o => o.id === c.obra_id);
+          const insumo  = (insumos || []).find(i => i.id === c.insumo_id);
+          const prov    = (proveedores || []).find(p => p.id === c.proveedor_id);
 
-          // 3) Traer insumos para obtener nombre
-          insumoCtrl.listar((errI, insumos) => {
-            if (errI) return cont.innerHTML = '<p class="text-red-500">Error al cargar insumos</p>';
-            const ins = (insumos||[]).find(i => i.id === c.insumo_id);
-            const insNombre = ins ? ins.nombre : 'Desconocido';
+          const obraNombre     = obra ? obra.nombre : 'Desconocida';
+          const insumoNombre   = insumo ? insumo.nombre : 'Desconocido';
+          const proveedorNombre = prov ? prov.nombre : 'Desconocido';
 
-            // 4) Renderizar detalle completo
-            cont.innerHTML = `
-              <h1 class="text-2xl font-bold mb-4">Compra #${c.id}</h1>
-              <p><strong>Fecha:</strong> ${c.fecha}</p>
-              <p><strong>Obra:</strong> ${obraNombre}</p>
-              <p><strong>Insumo:</strong> ${insNombre}</p>
-              <p><strong>Cantidad:</strong> ${c.cantidad}</p>
-              <p><strong>Precio:</strong> ${c.precio}</p>
-              <p><strong>Importe:</strong> ${c.importe}</p>
-              <p><strong>Proveedor:</strong> ${c.proveedor}</p>
-            `;
-          });
+          // 4) Renderizar detalle completo
+          cont.innerHTML = `
+            <h1 class="text-2xl font-bold mb-4">Compra #${c.id}</h1>
+            <p><strong>Fecha:</strong> ${c.fecha}</p>
+            <p><strong>Obra:</strong> ${obraNombre}</p>
+            <p><strong>Insumo:</strong> ${insumoNombre}</p>
+            <p><strong>Cantidad:</strong> ${c.cantidad}</p>
+            <p><strong>Precio:</strong> ${c.precio}</p>
+            <p><strong>Importe:</strong> ${c.importe}</p>
+            <p><strong>Proveedor:</strong> ${proveedorNombre}</p>
+          `;
+        })
+        .catch(err => {
+          console.error(err);
+          cont.innerHTML = '<p class="text-red-500">Error al cargar datos relacionados</p>';
         });
       });
     });

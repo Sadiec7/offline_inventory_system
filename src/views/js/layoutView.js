@@ -59,17 +59,30 @@ window.addEventListener('DOMContentLoaded', () => {
   } catch {}
 
   if (user && user.superuser === 1) {
-    const nav = document.getElementById('main-nav');
+    // Buscar el nav dentro del sidebar
+    const nav = document.querySelector('#sidebar nav');
     if (nav) {
-      const btn = document.createElement('button');
-      btn.textContent = 'Usuarios';
-      btn.className   = 'hover:underline';
-      btn.onclick     = () => navegar('usuarios');
+      // Crear el botón de usuarios con el mismo estilo que los otros
+      const btnUsuarios = document.createElement('button');
+      btnUsuarios.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-2.239" />
+        </svg>
+        Usuarios
+      `;
+      btnUsuarios.className = 'flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition';
+      btnUsuarios.onclick = () => navegar('usuarios');
 
-      const salir = Array.from(nav.children).find(el => el.textContent === 'Salir');
-      nav.insertBefore(btn, salir);
+      // Buscar el botón de salir para insertarlo antes
+      const btnSalir = nav.querySelector('button[onclick="confirmarCerrarSesion()"]');
+      if (btnSalir) {
+        nav.insertBefore(btnUsuarios, btnSalir);
+      } else {
+        // Si no encuentra el botón de salir, agregarlo al final
+        nav.appendChild(btnUsuarios);
+      }
     } else {
-      console.warn('[layoutView] #main-nav no encontrado');
+      console.warn('[layoutView] nav dentro del sidebar no encontrado');
     }
   }
 

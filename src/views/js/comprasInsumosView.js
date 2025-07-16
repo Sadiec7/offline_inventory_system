@@ -1,12 +1,14 @@
+// views/comprasInsumosView.js
 // Vista MVC en Electron sin preload
-// Exponer initComprasInsumosView para layoutView.js
 window.initComprasInsumosView = function() {
-  const compraCtrl = require('../controllers/compraController');
-  const obraCtrl   = require('../controllers/obraController');
-  const insumoCtrl = require('../controllers/insumoController');
+  const compraCtrl      = require('../controllers/compraController');
+  const obraCtrl        = require('../controllers/obraController');
+  const insumoCtrl      = require('../controllers/insumoController');
+  const proveedorCtrl   = require('../controllers/proveedorController');
 
   const obraSel       = document.getElementById('obra_id');
   const insumoSel     = document.getElementById('insumo_id');
+  const proveedorSel  = document.getElementById('proveedor_id');
   const listaEl       = document.getElementById('listaCompras');
   const btnNuevo      = document.getElementById('nuevo');
   const btnGuardar    = document.getElementById('guardar');
@@ -16,22 +18,25 @@ window.initComprasInsumosView = function() {
   const modalEd       = document.getElementById('modalEditar');
   const contenidoEd   = document.getElementById('contenidoEditar');
   const cerrarEd      = document.getElementById('cerrarEditar');
-
   const inputBuscar   = document.getElementById('buscarCompra');
   const btnBuscar     = document.getElementById('btnBuscar');
   const datalist      = document.getElementById('comprasData');
 
   let comprasGlobal = [];
 
+  // Eventos básicos
   cerrarDet.onclick   = () => modalDet.classList.add('hidden');
   cerrarEd.onclick    = () => modalEd.classList.add('hidden');
   btnNuevo.onclick    = limpiar;
   btnGuardar.onclick  = guardar;
 
+  // Carga inicial de datos
   cargarObras();
   cargarInsumos();
+  cargarProveedores();
   cargarCompras();
 
+  // Funciones de carga
   function cargarObras() {
     obraCtrl.listar((err, filas) => {
       obraSel.innerHTML = (Array.isArray(filas) && filas.length)
@@ -48,35 +53,46 @@ window.initComprasInsumosView = function() {
     });
   }
 
+  function cargarProveedores() {
+    proveedorCtrl.list()
+      .then(rows => {
+        proveedorSel.innerHTML = rows
+          .map(p => `<option value="${p.id}">${p.nombre}</option>`)
+          .join('');
+      })
+      .catch(err => {
+        proveedorSel.innerHTML = `<option disabled>Error al cargar proveedores</option>`;
+        console.error('Error al cargar proveedores:', err);
+      });
+  }
+
   function cargarCompras() {
     compraCtrl.listar((err, filas) => {
       if (err) {
-        listaEl.innerHTML = `<li class="p-4 text-red-500">Error al cargar</li>`;
+        listaEl.innerHTML = `<li class="p-4 text-red-500">Error al cargar compras</li>`;
         return;
       }
-      const data = Array.isArray(filas) ? filas : [];
-      comprasGlobal = data;
-      renderCompras(data);
-
+      comprasGlobal = Array.isArray(filas) ? filas : [];
+      renderCompras(comprasGlobal);
       if (datalist) {
-        datalist.innerHTML = data.map(c => `<option value="${c.nombre}">`).join('');
+        datalist.innerHTML = comprasGlobal.map(c => `<option value="${c.nombre}">`).join('');
       }
     });
   }
 
+  // Renderización
   function renderCompras(data) {
     if (!data.length) {
       listaEl.innerHTML = `<li class="p-4">No hay compras</li>`;
       return;
     }
-
     listaEl.innerHTML = data.map(c => `
       <li class="bg-white rounded-lg shadow p-4 mb-4 flex justify-between hover:shadow-md transition">
         <div class="flex-1 cursor-pointer" onclick="showDetalle(${c.id})">
           <div class="font-semibold">${c.fecha}</div>
           <div class="text-sm">Obra: ${c.obra_id} • Insumo: ${c.insumo_id}</div>
           <div class="text-sm">${c.cantidad}×${c.precio} = ${c.importe}</div>
-          <div class="text-sm">Proveedor: ${c.proveedor}</div>
+          <div class="text-sm">Proveedor ID: ${c.proveedor_id}</div>
         </div>
         <div class="ml-4 flex flex-col space-y-2">
           <button class="text-green-600 hover:text-green-800" onclick="showEditar(${c.id})">Editar</button>
@@ -84,13 +100,12 @@ window.initComprasInsumosView = function() {
         </div>
       </li>
     `).join('');
-
     listaEl.querySelectorAll('button[data-id]').forEach(b => {
       b.onclick = () => compraCtrl.eliminar(Number(b.dataset.id), () => cargarCompras());
     });
   }
 
-  // --- Buscar por nombre interno ---
+  // Búsqueda interna
   if (btnBuscar && inputBuscar) {
     btnBuscar.onclick = () => {
       const filtro = inputBuscar.value.toLowerCase();
@@ -106,127 +121,176 @@ window.initComprasInsumosView = function() {
       const c = Array.isArray(filas) ? filas.find(x => x.id === id) : null;
       if (!c) {
         contenidoDet.innerHTML = '<p class="text-red-500">Compra no encontrada</p>';
-      } else {
-        obraCtrl.listar((_, obras) => {
-          insumoCtrl.listar((_, insumos) => {
-            const o = obras.find(x => x.id === c.obra_id);
-            const i = insumos.find(x => x.id === c.insumo_id);
-            contenidoDet.innerHTML = `
-              <h2 class="text-xl font-bold mb-2">Compra #${c.id}</h2>
-              <p><strong>Fecha:</strong> ${c.fecha}</p>
-              <p><strong>Obra:</strong> ${o?.nombre || '–'}</p>
-              <p><strong>Insumo:</strong> ${i?.nombre || '–'}</p>
-              <p><strong>Cantidad:</strong> ${c.cantidad}</p>
-              <p><strong>Precio:</strong> ${c.precio}</p>
-              <p><strong>Importe:</strong> ${c.importe}</p>
-              <p><strong>Proveedor:</strong> ${c.proveedor}</p>
-            `;
-          });
-        });
+        modalDet.classList.remove('hidden');
+        return;
       }
-      modalDet.classList.remove('hidden');
+      Promise.all([
+        new Promise((res, rej) => obraCtrl.listar((e, r) => e ? rej(e) : res(r))),
+        new Promise((res, rej) => insumoCtrl.listar((e, r) => e ? rej(e) : res(r))),
+        proveedorCtrl.list()
+      ])
+      .then(([obras, insumos, proveedores]) => {
+        const o = obras.find(x => x.id === c.obra_id);
+        const i = insumos.find(x => x.id === c.insumo_id);
+        const p = proveedores.find(x => x.id === c.proveedor_id);
+        contenidoDet.innerHTML = `
+          <h2 class="text-xl font-bold mb-2">Compra #${c.id}</h2>
+          <p><strong>Fecha:</strong> ${c.fecha}</p>
+          <p><strong>Obra:</strong> ${o?.nombre || '–'}</p>
+          <p><strong>Insumo:</strong> ${i?.nombre || '–'}</p>
+          <p><strong>Cantidad:</strong> ${c.cantidad}</p>
+          <p><strong>Precio:</strong> ${c.precio}</p>
+          <p><strong>Importe:</strong> ${c.importe}</p>
+          <p><strong>Proveedor:</strong> ${p?.nombre || '–'}</p>
+        `;
+        modalDet.classList.remove('hidden');
+      })
+      .catch(err => {
+        console.error(err);
+        contenidoDet.innerHTML = '<p class="text-red-500">Error al cargar datos relacionados</p>';
+        modalDet.classList.remove('hidden');
+      });
     });
   };
 
   // --- Modal Editar ---
-  window.showEditar = function(id) {
-    contenidoEd.innerText = 'Cargando formulario…';
-    obraCtrl.listar((errO, obras) => {
-      insumoCtrl.listar((errI, insumos) => {
-        compraCtrl.listar((errC, filas) => {
-          const c = Array.isArray(filas) ? filas.find(x => x.id === id) : null;
-          if (!c) {
-            contenidoEd.innerHTML = '<p class="text-red-500">Compra no encontrada</p>';
+  // --- Modal Editar --- (Versión corregida)
+window.showEditar = function(id) {
+  console.log('Iniciando edición para ID:', id);
+  contenidoEd.innerText = 'Cargando formulario…';
+  
+  // Corregir la carga de datos para que sea consistente
+  Promise.all([
+    new Promise((res, rej) => obraCtrl.listar((e, r) => e ? rej(e) : res(r))),
+    new Promise((res, rej) => insumoCtrl.listar((e, r) => e ? rej(e) : res(r))),
+    proveedorCtrl.list() // Ya devuelve Promise directamente
+  ])
+  .then(([obras, insumos, proveedores]) => {
+    console.log('Datos cargados:', { obras: obras.length, insumos: insumos.length, proveedores: proveedores.length });
+    
+    // Cargar la compra específica
+    compraCtrl.listar((errC, filas) => {
+      if (errC) {
+        console.error('Error al cargar compras:', errC);
+        contenidoEd.innerHTML = '<p class="text-red-500">Error al cargar compras</p>';
+        modalEd.classList.remove('hidden');
+        return;
+      }
+      
+      const c = Array.isArray(filas) ? filas.find(x => x.id === id) : null;
+      if (!c) {
+        console.error('Compra no encontrada con ID:', id);
+        contenidoEd.innerHTML = '<p class="text-red-500">Compra no encontrada</p>';
+        modalEd.classList.remove('hidden');
+        return;
+      }
+      
+      console.log('Compra encontrada:', c);
+      
+      // Generar formulario
+      contenidoEd.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">Editar Compra #${c.id}</h2>
+        <label class="block mb-2">Obra:
+          <select id="edit_obra" class="w-full p-2 border rounded mb-4">
+            ${obras.map(o => `<option value="${o.id}"${o.id === c.obra_id ? ' selected' : ''}>${o.nombre}</option>`).join('')}
+          </select>
+        </label>
+        <label class="block mb-2">Insumo:
+          <select id="edit_insumo" class="w-full p-2 border rounded mb-4">
+            ${insumos.map(i => `<option value="${i.id}"${i.id === c.insumo_id ? ' selected' : ''}>${i.nombre}</option>`).join('')}
+          </select>
+        </label>
+        <label class="block mb-2">Nombre:
+          <input id="edit_nombre" type="text" value="${c.nombre || ''}" class="w-full p-2 border rounded mb-4"/>
+        </label>
+        <label class="block mb-2">Fecha:
+          <input id="edit_fecha" type="date" value="${c.fecha || ''}" class="w-full p-2 border rounded mb-4"/>
+        </label>
+        <label class="block mb-2">Pedido:
+          <input id="edit_pedido" type="text" value="${c.pedido || ''}" class="w-full p-2 border rounded mb-4"/>
+        </label>
+        <div class="grid grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block mb-1">Cantidad:</label>
+            <input id="edit_cantidad" type="number" step="0.01" value="${c.cantidad || 0}" class="w-full p-2 border rounded"/>
+          </div>
+          <div>
+            <label class="block mb-1">Precio:</label>
+            <input id="edit_precio" type="number" step="0.01" value="${c.precio || 0}" class="w-full p-2 border rounded"/>
+          </div>
+          <div>
+            <label class="block mb-1">Importe:</label>
+            <input id="edit_importe" type="number" step="0.01" value="${c.importe || 0}" class="w-full p-2 border rounded"/>
+          </div>
+        </div>
+        <label class="block mb-4">Proveedor:
+          <select id="edit_proveedor" class="w-full p-2 border rounded mb-4">
+            ${proveedores.map(p => `<option value="${p.id}"${p.id === c.proveedor_id ? ' selected' : ''}>${p.nombre}</option>`).join('')}
+          </select>
+        </label>
+        <div class="flex justify-end space-x-2">
+          <button id="cancelEd" class="bg-gray-400 text-white px-4 py-2 rounded">Cancelar</button>
+          <button id="saveEd" class="bg-blue-600 text-white px-4 py-2 rounded">Actualizar</button>
+        </div>
+      `;
+      
+      // Eventos de botones
+      document.getElementById('cancelEd').onclick = () => {
+        modalEd.classList.add('hidden');
+      };
+      
+      document.getElementById('saveEd').onclick = () => {
+        const upd = {
+          obra_id:     parseInt(document.getElementById('edit_obra').value, 10),
+          insumo_id:   parseInt(document.getElementById('edit_insumo').value, 10),
+          nombre:      document.getElementById('edit_nombre').value.trim(),
+          fecha:       document.getElementById('edit_fecha').value,
+          pedido:      document.getElementById('edit_pedido').value.trim(),
+          cantidad:    parseFloat(document.getElementById('edit_cantidad').value) || 0,
+          precio:      parseFloat(document.getElementById('edit_precio').value) || 0,
+          importe:     parseFloat(document.getElementById('edit_importe').value) || 0,
+          proveedor_id: parseInt(document.getElementById('edit_proveedor').value, 10)
+        };
+        
+        console.log('Datos a actualizar:', upd);
+        
+        compraCtrl.editar(c.id, upd, (err, result) => {
+          if (err) {
+            console.error('Error al actualizar:', err);
+            alert('Error al actualizar la compra: ' + err.message);
           } else {
-            contenidoEd.innerHTML = `
-              <h2 class="text-xl font-bold mb-4">Editar Compra #${c.id}</h2>
-              <label class="block mb-2">Obra:
-                <select id="edit_obra" class="w-full p-2 border rounded mb-4">
-                  ${obras.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('')}
-                </select>
-              </label>
-              <label class="block mb-2">Insumo:
-                <select id="edit_insumo" class="w-full p-2 border rounded mb-4">
-                  ${insumos.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('')}
-                </select>
-              </label>
-              <label class="block mb-2">Nombre:
-                <input id="edit_nombre" type="text" value="${c.nombre}" class="w-full p-2 border rounded mb-4"/>
-              </label>
-              <label class="block mb-2">Fecha:
-                <input id="edit_fecha" type="date" value="${c.fecha}" class="w-full p-2 border rounded mb-4"/>
-              </label>
-              <label class="block mb-2">Pedido:
-                <input id="edit_pedido" type="text" value="${c.pedido}" class="w-full p-2 border rounded mb-4"/>
-              </label>
-              <div class="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label class="block mb-1">Cantidad:</label>
-                  <input id="edit_cantidad" type="number" step="0.01" value="${c.cantidad}" class="w-full p-2 border rounded"/>
-                </div>
-                <div>
-                  <label class="block mb-1">Precio:</label>
-                  <input id="edit_precio" type="number" step="0.01" value="${c.precio}" class="w-full p-2 border rounded"/>
-                </div>
-                <div>
-                  <label class="block mb-1">Importe:</label>
-                  <input id="edit_importe" type="number" step="0.01" value="${c.importe}" class="w-full p-2 border rounded"/>
-                </div>
-              </div>
-              <label class="block mb-4">Proveedor:
-                <input id="edit_proveedor" type="text" value="${c.proveedor}" class="w-full p-2 border rounded"/>
-              </label>
-              <div class="flex justify-end space-x-2">
-                <button id="cancelEd" class="bg-gray-400 text-white px-4 py-2 rounded">Cancelar</button>
-                <button id="saveEd"   class="bg-blue-600 text-white px-4 py-2 rounded">Actualizar</button>
-              </div>
-            `;
-            document.getElementById('edit_obra').value   = c.obra_id;
-            document.getElementById('edit_insumo').value = c.insumo_id;
-            document.getElementById('cancelEd').onclick = () => modalEd.classList.add('hidden');
-            document.getElementById('saveEd').onclick   = () => {
-              const upd = {
-                obra_id:   +document.getElementById('edit_obra').value,
-                insumo_id: +document.getElementById('edit_insumo').value,
-                nombre:    document.getElementById('edit_nombre').value.trim(),
-                fecha:     document.getElementById('edit_fecha').value,
-                pedido:    document.getElementById('edit_pedido').value.trim(),
-                cantidad:  +document.getElementById('edit_cantidad').value || 0,
-                precio:    +document.getElementById('edit_precio').value   || 0,
-                importe:   +document.getElementById('edit_importe').value || 0,
-                proveedor: document.getElementById('edit_proveedor').value.trim()
-              };
-              compraCtrl.editar(c.id, upd, err => {
-                if (!err) {
-                  modalEd.classList.add('hidden');
-                  cargarCompras();
-                } else {
-                  alert('Error al actualizar');
-                }
-              });
-            };
+            console.log('Compra actualizada exitosamente');
+            modalEd.classList.add('hidden');
+            cargarCompras(); // Recargar la lista
           }
         });
-      });
-    });
-    modalEd.classList.remove('hidden');
-  };
+      };
 
+      modalEd.classList.remove('hidden');
+    });
+  })
+  .catch(err => {
+    console.error('Error al cargar datos para editar:', err);
+    contenidoEd.innerHTML = '<p class="text-red-500">Error al cargar datos para editar</p>';
+    modalEd.classList.remove('hidden');
+  });
+};
+  // Funciones guardar y limpiar
   function guardar() {
     const data = {
-      obra_id:   +obraSel.value,
-      insumo_id: +insumoSel.value,
-      nombre:    document.getElementById('nombre').value.trim(),
-      fecha:     document.getElementById('fecha').value,
-      pedido:    document.getElementById('pedido').value.trim(),
-      cantidad:  +document.getElementById('cantidad').value || 0,
-      precio:    +document.getElementById('precio').value   || 0,
-      importe:   +document.getElementById('importe').value  || 0,
-      proveedor: document.getElementById('proveedor').value.trim()
+      obra_id:     +obraSel.value,
+      insumo_id:   +insumoSel.value,
+      nombre:      document.getElementById('nombre').value.trim(),
+      fecha:       document.getElementById('fecha').value,
+      pedido:      document.getElementById('pedido').value.trim(),
+      cantidad:    +document.getElementById('cantidad').value      || 0,
+      precio:      +document.getElementById('precio').value        || 0,
+      importe:     +document.getElementById('importe').value       || 0,
+      proveedor_id:+proveedorSel.value
     };
     compraCtrl.guardar(data, err => {
       if (err) {
-        console.error('Error al guardar:', err);
+        console.error('Error al guardar compra:', err);
       } else {
         limpiar();
         cargarCompras();
@@ -235,7 +299,7 @@ window.initComprasInsumosView = function() {
   }
 
   function limpiar() {
-    ['nombre','fecha','pedido','cantidad','precio','importe','proveedor']
+    ['nombre','fecha','pedido','cantidad','precio','importe']
       .forEach(id => document.getElementById(id).value = '');
   }
 };
