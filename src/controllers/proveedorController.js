@@ -1,13 +1,27 @@
-const {
-  getAllProveedores,
-  getProveedorById,
-  createProveedor,
-  updateProveedor,
-  deleteProveedor
-} = require('../models/proveedorModel');
+// controllers/proveedorController.js - Versión mejorada
+const proveedorModel = require('../models/proveedorModel');
+const path = require('path');
 
-exports.list   = () => getAllProveedores();
-exports.get    = id => getProveedorById(id);
-exports.add    = data => createProveedor(data);
-exports.update = (id, data) => updateProveedor(id, data);
-exports.remove = id => deleteProveedor(id);
+// Función para cargar proveedores con callback
+function listar(callback) {
+  try {
+    proveedorModel.getAllProveedores()
+      .then(rows => callback(null, rows))
+      .catch(err => {
+        console.error('Error en modelo al listar proveedores:', err);
+        callback(new Error('Error al cargar proveedores'));
+      });
+  } catch (error) {
+    console.error('Error inesperado en controlador de proveedores:', error);
+    callback(new Error('Error interno del sistema'));
+  }
+}
+
+module.exports = { 
+  listar,
+  list: proveedorModel.getAllProveedores,
+  get: proveedorModel.getProveedorById,
+  add: proveedorModel.createProveedor,
+  update: proveedorModel.updateProveedor,
+  remove: proveedorModel.deleteProveedor
+};
