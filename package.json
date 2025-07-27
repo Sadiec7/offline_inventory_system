@@ -1,16 +1,59 @@
 {
   "name": "offline_inventory_system",
   "version": "1.0.0",
-  "description": "",
+  "description": "Sistema de inventario offline",
   "main": "main.js",
   "scripts": {
     "dev": "electron .",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:portable": "electron-builder --win portable",
+    "dist": "npm run build"
   },
   "keywords": [],
-  "author": "",
+  "author": "Tu Nombre",
   "license": "ISC",
   "type": "commonjs",
+  "build": {
+    "appId": "com.tuempresa.offline-inventory-system",
+    "productName": "Sistema de Inventario Offline",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/sqlite3/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/",
+        "filter": ["**/*"]
+      }
+    ]
+  },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
     "autoprefixer": "^10.4.21",
