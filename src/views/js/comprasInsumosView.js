@@ -1,9 +1,10 @@
 // views/comprasInsumosView.js
 window.initComprasInsumosView = function() {
-  const compraCtrl      = require('../controllers/compraController');
-  const obraCtrl        = require('../controllers/obraController');
-  const insumoCtrl      = require('../controllers/insumoController');
-  const proveedorCtrl   = require('../controllers/proveedorController');
+
+const compraCtrl = require(path.join(__dirname, '..', 'controllers', 'compraController'));
+const obraCtrl = require(path.join(__dirname, '..', 'controllers', 'obraController'));
+const insumoCtrl = require(path.join(__dirname, '..', 'controllers', 'insumoController'));
+const proveedorCtrl = require(path.join(__dirname, '..', 'controllers', 'proveedorController'));
 
   const obraSel       = document.getElementById('obra_id');
   const insumoSel     = document.getElementById('insumo_id');

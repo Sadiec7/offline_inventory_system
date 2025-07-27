@@ -1,16 +1,22 @@
-const fs   = require('fs');
+// Mantenemos path porque otras funciones lo necesitan
 const path = require('path');
-const VIEWS_DIR = path.join(process.cwd(), 'src', 'views');
+// Solo removemos fs que no funciona en renderer empaquetado
+// const fs   = require('fs');
 
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function navegar(seccion) {
+async function navegar(seccion) {
   const cont = document.getElementById('contenido');
   try {
-    // Carga el HTML de la vista
-    const html = fs.readFileSync(path.join(VIEWS_DIR, `${seccion}.html`), 'utf8');
+    // Usar directamente la ruta que sabemos funciona (basado en tu estructura)
+    // Eliminamos el bucle que causa errores innecesarios
+    const response = await fetch(`./${seccion}.html`);
+    if (!response.ok) {
+      throw new Error(`No se pudo cargar la vista ${seccion}: ${response.status}`);
+    }
+    const html = await response.text();
     cont.innerHTML = html;
 
     const scriptId = `view-${seccion}`;

@@ -1,6 +1,4 @@
-// usuariosView.js
-
-const userCtrl = require('../controllers/userController');
+const userCtrl = require(path.join(__dirname, '..', 'controllers', 'userController'));
 
 window.initUsuariosView = function() {
   const listaEl        = document.getElementById('listaUsuarios');

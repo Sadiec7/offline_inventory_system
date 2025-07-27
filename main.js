@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 
+// Habilitar @electron/remote (SOLO AGREGADO ESTO)
+require('@electron/remote/main').initialize();
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -8,11 +11,15 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,            // permite require() en renderer
       contextIsolation: false,          // desactiva sandbox
-      nodeIntegrationInSubFrames: true  // permite require() dentro de <iframe>
+      nodeIntegrationInSubFrames: true, // permite require() dentro de <iframe>
+      enableRemoteModule: true          // SOLO AGREGADO ESTO
     }
   });
 
-  win.webContents.openDevTools();
+  // Habilitar @electron/remote para esta ventana (SOLO AGREGADO ESTO)
+  require('@electron/remote/main').enable(win.webContents);
+
+  //win.webContents.openDevTools();
   win.loadFile(path.join(__dirname, 'src', 'views', 'login.html'));
 }
 
@@ -30,7 +37,6 @@ function setupIpcHandlers() {
 app.whenReady().then(() => {
   setupIpcHandlers();
   createWindow();
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

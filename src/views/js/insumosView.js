@@ -1,7 +1,6 @@
 console.log('[insumosView.js] cargado correctamente');
 
-const insumoController = require(path.join(process.cwd(), 'src', 'controllers', 'insumoController.js'));
-
+const insumoController = require(path.join(__dirname, '..', 'controllers', 'insumoController.js'));
 window.initInsumosView = function () {
   console.log('[initInsumosView] Ejecutando vista de insumos...');
   let idSel = null;

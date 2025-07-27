@@ -1,6 +1,5 @@
-// views/js/proveedoresView.js
-const provCtrl = require('../../src/controllers/proveedorController');
 
+const provCtrl = require(path.join(__dirname, '..', 'controllers', 'proveedorController'));
 window.initProveedoresView = async function() {
   const tblBody     = document.getElementById('tblProveedores');
   const modal       = document.getElementById('modalForm');

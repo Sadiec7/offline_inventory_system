@@ -1,8 +1,8 @@
 // src/views/js/importar_exportarView.js
 const { ipcRenderer } = require('electron');
-
-const sqlite3         = require('sqlite3').verbose();
-const ExcelJS         = require('exceljs');
+const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
+const ExcelJS = require('exceljs');
 
 window.initImportar_exportarView = function () {
   let currentSection = 'export';
@@ -33,6 +33,7 @@ window.initImportar_exportarView = function () {
       showSection(exportSec, false);
     });
   }
+  
   function toggleTab(el, active) {
     if (active) {
       el.classList.add('text-blue-600','border-blue-600','bg-white');
@@ -42,6 +43,7 @@ window.initImportar_exportarView = function () {
       el.classList.remove('text-blue-600','border-blue-600','bg-white');
     }
   }
+  
   function showSection(el, visible) {
     el.classList[visible ? 'remove' : 'add']('hidden');
     if (visible) el.classList.add('flex');
@@ -51,6 +53,7 @@ window.initImportar_exportarView = function () {
   function setupDropZones() {
     setupDropZone('sqlite-drop-zone', 'sqlite-file-input', handleSQLiteFile);
   }
+  
   function setupDropZone(dzId, fiId, handler) {
     const dz = document.getElementById(dzId);
     const fi = document.getElementById(fiId);
@@ -92,6 +95,7 @@ window.initImportar_exportarView = function () {
     st.classList.remove('hidden');
     setTimeout(() => st.classList.add('hidden'), 5000);
   }
+  
   function showProgress(type, on = true) {
     const pr = document.getElementById(`${type}-progress`);
     const br = document.getElementById(`${type}-progress-bar`);
@@ -113,39 +117,41 @@ window.initImportar_exportarView = function () {
       br.style.width = '0%';
     }
   }
-function addToHistory(type, message) {
-  const hist = document.getElementById(`${type}-history`);
-  if (!hist) {
-    console.warn(`Historial ${type}-history no encontrado`);
-    return;
-  }
 
-  // Si el primer elemento es solo un placeholder (clase text-gray-500), lo quitamos
-  const firstEl = hist.firstElementChild;
-  if (firstEl && firstEl.classList.contains('text-gray-500')) {
-    hist.innerHTML = '';
-  }
+  function addToHistory(type, message) {
+    const hist = document.getElementById(`${type}-history`);
+    if (!hist) {
+      console.warn(`Historial ${type}-history no encontrado`);
+      return;
+    }
 
-  const ts   = new Date().toLocaleString();
-  const item = document.createElement('div');
-  item.className = 'text-sm text-gray-600 p-2 bg-white rounded border';
-  item.innerHTML = `
-    <div class="flex justify-between">
-      <span>${message}</span>
-      <span class="text-xs text-gray-400">${ts}</span>
-    </div>
-  `;
+    // Si el primer elemento es solo un placeholder (clase text-gray-500), lo quitamos
+    const firstEl = hist.firstElementChild;
+    if (firstEl && firstEl.classList.contains('text-gray-500')) {
+      hist.innerHTML = '';
+    }
 
-  hist.insertBefore(item, hist.firstChild);
-  // Mantenemos solo los últimos 5
-  while (hist.children.length > 5) {
-    hist.removeChild(hist.lastChild);
+    const ts   = new Date().toLocaleString();
+    const item = document.createElement('div');
+    item.className = 'text-sm text-gray-600 p-2 bg-white rounded border';
+    item.innerHTML = `
+      <div class="flex justify-between">
+        <span>${message}</span>
+        <span class="text-xs text-gray-400">${ts}</span>
+      </div>
+    `;
+
+    hist.insertBefore(item, hist.firstChild);
+    // Mantenemos solo los últimos 5
+    while (hist.children.length > 5) {
+      hist.removeChild(hist.lastChild);
+    }
   }
-}
 
   /*** 5) EXPORTAR SQLITE ***/
   async function exportSQLite() {
-    const dbFile = path.join(process.cwd(), 'inventario.sqlite');
+    // CORREGIDO: usar __dirname en lugar de process.cwd()
+    const dbFile = path.join(__dirname, '..', '..', 'inventario.sqlite');
     showStatus('export', '⏳ Exportando SQLite...', 'info');
     showProgress('export');
 
@@ -166,7 +172,8 @@ function addToHistory(type, message) {
 
   /*** 6) EXPORTAR A EXCEL ***/
   async function exportExcel() {
-    const dbPath = path.join(process.cwd(), 'inventario.sqlite');
+    // CORREGIDO: usar __dirname en lugar de process.cwd()
+    const dbPath = path.join(__dirname, '..', '..', 'inventario.sqlite');
     const tables = Array.from(
       document.querySelectorAll('input[type="checkbox"]:checked'),
       cb => cb.value
@@ -212,7 +219,8 @@ function addToHistory(type, message) {
 
   /*** 7) IMPORTAR SQLITE ***/
   function handleSQLiteFile(file) {
-    const dest = path.join(process.cwd(), 'inventario.sqlite');
+    // CORREGIDO: usar __dirname en lugar de process.cwd()
+    const dest = path.join(__dirname, '..', '..', 'inventario.sqlite');
     if (!/\.(sqlite|db)$/i.test(file.name)) {
       showStatus('import', '❌ Solo .sqlite/.db', 'error');
       return;

@@ -1,5 +1,5 @@
-// loginView.js
-const loginCtrl = require('../controllers/loginController');
+const path = require('path');
+const loginCtrl = require(path.join(__dirname, '..', 'controllers', 'loginController'));
 
 window.addEventListener('DOMContentLoaded', () => {
   const btn    = document.getElementById('btn-login');

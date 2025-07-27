@@ -1,9 +1,8 @@
 // impresionesView.js
-const obraCtrl = require('../controllers/obraController');
-const compraCtrl = require('../controllers/compraController');
-const insumoCtrl = require('../controllers/insumoController');
-const proveedorCtrl = require('../controllers/proveedorController');
-
+const obraCtrl = require(path.join(__dirname, '..', 'controllers', 'obraController'));
+const compraCtrl = require(path.join(__dirname, '..', 'controllers', 'compraController'));
+const insumoCtrl = require(path.join(__dirname, '..', 'controllers', 'insumoController'));
+const proveedorCtrl = require(path.join(__dirname, '..', 'controllers', 'proveedorController'));
 let obras = [];
 let comprasData = [];
 

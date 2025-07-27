@@ -1,7 +1,4 @@
-
-console.log('[obrasView.js] cargado correctamente');
-
-const obraController = require(path.join(process.cwd(), 'src', 'controllers', 'obraController.js'));
+const obraController = require(path.join(__dirname, '..', 'controllers', 'obraController'));
 
 window.initObrasView = function () {
   console.log('[initObrasView] Ejecutando vista de obras...');

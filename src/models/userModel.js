@@ -1,6 +1,12 @@
 // src/models/userModel.js
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('inventario.sqlite');
+const path = require('path');
+
+// Ajusta la ruta si tu DB está en otra ubicación
+const dbPath = path.join(__dirname, '../../inventario.sqlite');
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, err => {
+  if (err) console.error('Error al conectar con la DB de usuarios:', err);
+});
 
 /**
  * Valida credenciales y devuelve el usuario (sin password)
