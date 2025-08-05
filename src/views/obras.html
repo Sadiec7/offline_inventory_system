@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Obras</title>
+  <!-- Tailwind CSS -->
+  <link rel="stylesheet" href="./css/tailwind.css" />
+  <!-- SweetAlert2 para alertas -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <div class="max-w-7xl mx-auto p-6 flex-1 flex flex-col md:flex-row">
+    <div class="bg-white shadow-xl rounded-lg flex-1 flex flex-col md:flex-row overflow-hidden">
+      <!-- Lista lateral -->
+      <aside class="w-full md:w-1/4 bg-gray-50 p-6 border-b md:border-b-0 md:border-r border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Lista de Obras</h3>
+        <ul id="listaObras" class="space-y-2 overflow-auto h-full">
+          <li id="placeholderItem" class="flex items-start justify-between py-2 px-3 text-gray-400 italic">
+            Cargando obras...
+          </li>
+          <li id="noResultsListItem" class="hidden text-center text-gray-500 italic py-2">
+            No se encontraron obras.
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Formulario y buscador -->
+      <section class="w-full md:flex-1 p-6 overflow-auto relative">
+        <!-- Buscador global -->
+        <div class="flex items-center gap-2 mb-6">
+          <input list="obrasData" id="buscarObra" placeholder="Buscar obra..." class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="off" />
+          <datalist id="obrasData"></datalist>
+          <button id="btnBuscar" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+          </button>
+        </div>
+        <div class="flex flex-col sm:flex-row justify-end gap-4 mb-6">
+          <button id="nuevo" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg transition">Nuevo</button>
+          <button id="guardar" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition">Guardar</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div>
+            <label for="codigo" class="block text-sm font-medium text-gray-700 mb-1">Código</label>
+            <input type="text" id="codigo" name="codigo" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
+          </div>
+          <div>
+            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input type="text" id="nombre" name="nombre" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
+          </div>
+          <div>
+            <label for="archivo" class="block text-sm font-medium text-gray-700 mb-1">Archivo</label>
+            <select id="archivo" name="archivo" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400">
+              <option value="RECIENTE">RECIENTE</option>
+              <option value="ANTIGUO">ANTIGUO</option>
+              <option value="EN PROCESO">EN PROCESO</option>
+              <option value="TERMINADO">TERMINADO</option>
+            </select>
+          </div>
+          <div>
+            <label for="localidad" class="block text-sm font-medium text-gray-700 mb-1">Localidad</label>
+            <input type="text" id="localidad" name="localidad" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
+          </div>
+          <div>
+            <label for="municipio" class="block text-sm font-medium text-gray-700 mb-1">Municipio</label>
+            <input type="text" id="municipio" name="municipio" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
+          </div>
+          <div>
+            <label for="presupuesto" class="block text-sm font-medium text-gray-700 mb-1">Presupuesto</label>
+            <input type="text" id="presupuesto" name="presupuesto" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" />
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script defer src="js/obrasView.js"></script>
+</body>
+</html>

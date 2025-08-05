@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Impresiones</title>
+  <link rel="stylesheet" href="./css/tailwind.css">
+  <!-- Incluir SweetAlert2 para mensajes -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+  <div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <h2 class="text-xl font-semibold text-gray-800">Sistema de Impresiones</h2>
+        <p class="text-gray-600 text-sm mt-1">Generar reportes de compras por obra</p>
+      </div>
+
+      <div class="p-6">
+        <!-- Filtros -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label for="filtroObra" class="block text-sm font-medium text-gray-700 mb-2">Seleccionar Obra</label>
+            <select id="filtroObra" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Seleccione una obra...</option>
+            </select>
+          </div>
+          
+          <div>
+            <label for="fechaInicio" class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
+            <input type="date" id="fechaInicio" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div>
+            <label for="fechaFin" class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
+            <input type="date" id="fechaFin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex flex-wrap gap-3 mb-6">
+          <button id="btnGenerarReporte" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Generar Reporte
+          </button>
+          
+          <button id="btnImprimir" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir
+          </button>
+          
+          <button id="btnLimpiar" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Limpiar
+          </button>
+        </div>
+
+        <!-- Área de vista previa del reporte -->
+        <div id="reporteContainer" class="border border-gray-200 rounded-md min-h-96 bg-gray-50 flex items-center justify-center text-gray-500">
+          <div class="text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p class="text-lg">Seleccione una obra y genere un reporte para ver la vista previa</p>
+            <p class="text-sm mt-1">Los datos aparecerán aquí una vez generado el reporte</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incluir el archivo JavaScript de la vista -->
+  <script src="./js/impresionesView.js"></script>
+  
+  <!-- Inicializar la vista -->
+  <script>
+    const { initImpresionesView } = require('./js/impresionesView');
+    document.addEventListener('DOMContentLoaded', initImpresionesView);
+  </script>
+</body>
+</html>

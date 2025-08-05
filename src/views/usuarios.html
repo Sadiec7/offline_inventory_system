@@ -1,0 +1,42 @@
+<!-- Vista de Usuarios (se carga dentro de <main id="contenido"> por layoutView.js) -->
+<div class="flex max-w-5xl mx-auto mt-6 bg-white p-6 rounded shadow">
+  <!-- Lista de usuarios -->
+  <div class="w-1/3 border-r pr-4">
+    <h3 class="font-bold mb-2">Usuarios Registrados</h3>
+    <ul id="listaUsuarios" class="space-y-2 h-64 overflow-auto text-sm">
+      <li>Cargando usuarios…</li>
+    </ul>
+  </div>
+  <!-- Formulario de creación/edición -->
+  <div class="w-2/3 pl-4">
+    <h3 class="font-bold mb-2">Nuevo Usuario</h3>
+
+    <label class="block mb-1 font-medium">Usuario:</label>
+    <input id="username" type="text"
+           class="w-full mb-2 p-2 border rounded"
+           placeholder="Nombre de usuario" />
+
+    <label class="block mb-1 font-medium">Contraseña:</label>
+    <input id="password" type="password"
+           class="w-full mb-2 p-2 border rounded"
+           placeholder="Contraseña" />
+
+    <label class="block mb-1 font-medium">Superuser:</label>
+    <select id="superuser"
+            class="w-full mb-4 p-2 border rounded">
+      <option value="0">No</option>
+      <option value="1">Sí</option>
+    </select>
+
+    <div class="flex space-x-2">
+      <button id="nuevoUsuario"
+              class="bg-gray-500 text-white px-4 py-2 rounded">
+        Nuevo
+      </button>
+      <button id="guardarUsuario"
+              class="bg-green-600 text-white px-4 py-2 rounded">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>

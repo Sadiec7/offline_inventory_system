@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Content Security Policy to mitigate unsafe-eval warnings -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Principal</title>
+  <!-- Tailwind CSS -->
+  <link rel="stylesheet" href="./css/tailwind.css" />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+  <!-- Layout and Navigation Script -->
+  <script defer src="./js/layoutView.js"></script>
+</head>
+<body class="flex h-screen bg-gray-50 text-gray-800">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="hidden md:flex md:flex-col w-64 bg-white shadow-lg">
+    <div class="h-16 flex items-center px-6 border-b">
+      <span class="text-xl font-semibold">CRONOS</span>
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2">
+      <button onclick="navegar('obras')" class="flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7l6 6-6 6M9 7l6 6-6 6" />
+        </svg>
+        Obras
+      </button>
+      <button onclick="navegar('comprasInsumos')" class="flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m5-9v9m4-9v9m5-9l2 9" />
+        </svg>
+        Compras
+      </button>
+      <button onclick="navegar('insumos')" class="flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0l-8 5-8-5" />
+        </svg>
+        Insumos
+      </button>
+      <button onclick="navegar('proveedores')" class="flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0l-8 5-8-5" />
+        </svg>
+        Proveedores
+      </button>
+
+      <!-- Botón para Exportar -->
+      <button onclick="navegar('importar_exportar')" class="flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 4l8 8" />
+        </svg>
+        Exportar
+      </button>
+
+            <!-- Botón para Imprimir -->
+      <button onclick="navegar('impresiones')" class="flex items-center w-full px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16M4 4l8 8" />
+        </svg>
+        Imprimir
+      </button>
+
+      
+
+      <button onclick="confirmarCerrarSesion()" class="flex items-center w-full px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7" />
+        </svg>
+        Salir
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <div class="flex flex-col flex-1">
+    <!-- Mobile header -->
+    <header class="md:hidden flex items-center justify-between bg-white border-b px-4 py-3">
+      <button id="menu-btn" class="focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <span class="text-lg font-semibold">CRONOS Panel</span>
+      <button onclick="confirmarCerrarSesion()" class="text-red-600 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Page content area -->
+    <main id="contenido" class="flex-1 overflow-auto p-6 bg-gray-50">
+      <!-- Aquí se inyectará el contenido dinámico -->
+    </main>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.getElementById('menu-btn');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => sidebar.classList.toggle('hidden'));
+    }
+
+    function confirmarCerrarSesion() {
+      Swal.fire({
+        title: '¿Está seguro que desea cerrar sesión?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          cerrarSesion();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
