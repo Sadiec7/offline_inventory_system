@@ -189,7 +189,7 @@ function generarHTMLReporte(obra, compras, proveedores, insumos) {
         <div style="flex: 0 0 100px; margin-right: 20px;">
           <!-- Logo genérico -->
           <div style="width: 80px; height: 60px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; text-align: center;">
-            CRONOS<br>LOGO
+            <img src="../../assets/cronos logo.jpg" style="max-width: 100%; max-height: 100%;"><br>
           </div>
         </div>
         
