@@ -19,8 +19,8 @@ function createWindow() {
   // Habilitar @electron/remote para esta ventana (SOLO AGREGADO ESTO)
   require('@electron/remote/main').enable(win.webContents);
 
-  //win.webContents.openDevTools();
-  win.loadFile(path.join(__dirname, 'src', 'views', 'login.html'));
+  win.webContents.openDevTools();
+  win.loadFile(path.join(__dirname, 'src', 'views', 'layout.html'));
 }
 
 // Registrar el handler IPC para show-save-dialog

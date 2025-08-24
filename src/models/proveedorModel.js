@@ -16,7 +16,7 @@ function getAllProveedores() {
     db.all(
       `SELECT id, nombre, rfc, direccion, telefono
          FROM proveedores
-       ORDER BY nombre`,
+       ORDER BY nombre ASC`,
       [],
       (err, rows) => err ? reject(err) : resolve(rows)
     );
