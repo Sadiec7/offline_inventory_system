@@ -1,26 +1,27 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 
-// Habilitar @electron/remote (SOLO AGREGADO ESTO)
+// Habilitar @electron/remote
 require('@electron/remote/main').initialize();
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: path.join(__dirname, './assets', 'icon.ico'),
     webPreferences: {
       nodeIntegration: true,            // permite require() en renderer
       contextIsolation: false,          // desactiva sandbox
       nodeIntegrationInSubFrames: true, // permite require() dentro de <iframe>
-      enableRemoteModule: true          // SOLO AGREGADO ESTO
+      enableRemoteModule: true         
     }
   });
 
-  // Habilitar @electron/remote para esta ventana (SOLO AGREGADO ESTO)
+  // Habilitar @electron/remote para esta ventana
   require('@electron/remote/main').enable(win.webContents);
 
-  win.webContents.openDevTools();
-  win.loadFile(path.join(__dirname, 'src', 'views', 'layout.html'));
+  //win.webContents.openDevTools(); desactivar las devtools por defecto
+  win.loadFile(path.join(__dirname, 'src', 'views', 'login.html'));
 }
 
 // Registrar el handler IPC para show-save-dialog

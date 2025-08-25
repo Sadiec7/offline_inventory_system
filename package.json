@@ -4,7 +4,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-packager . CRONOS-Inventario --platform=win32 --arch=x64 --out=dist/ --overwrite"
+    "build": "electron-packager . CRONOS-Inventario --platform=win32 --arch=x64 --out=dist/ --overwrite --icon=assets/icon.ico",
+    "build-all": "electron-packager . CRONOS-Inventario --platform=all --arch=x64 --out=dist/ --overwrite",
+    "build-win": "electron-packager . CRONOS-Inventario --platform=win32 --arch=x64 --out=dist/ --overwrite --icon=assets/cronos-logo.ico",
+    "build-mac": "electron-packager . CRONOS-Inventario --platform=darwin --arch=x64 --out=dist/ --overwrite --icon=assets/icon.icns",
+    "build-linux": "electron-packager . CRONOS-Inventario --platform=linux --arch=x64 --out=dist/ --overwrite --icon=assets/icon.png"
   },
   "dependencies": {
     "@electron/remote": "^2.1.3",
