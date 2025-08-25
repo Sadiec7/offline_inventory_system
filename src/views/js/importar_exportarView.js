@@ -1,15 +1,18 @@
 // src/views/js/importar_exportarView.js
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
+
 const sqlite3 = require('sqlite3').verbose();
 const ExcelJS = require('exceljs');
 
 window.initImportar_exportarView = function () {
   let currentSection = 'export';
+  let isProcessing = false;
 
   setupTabs();
   setupDropZones();
   setupEventListeners();
+  createGlobalLoadingOverlay();
 
   /*** 1) PESTAÑAS ***/
   function setupTabs() {
@@ -19,13 +22,16 @@ window.initImportar_exportarView = function () {
     const importSec = document.getElementById('import-section');
 
     tabExport.addEventListener('click', () => {
+      if (isProcessing) return;
       currentSection = 'export';
       toggleTab(tabExport, true);
       toggleTab(tabImport, false);
       showSection(exportSec, true);
       showSection(importSec, false);
     });
+
     tabImport.addEventListener('click', () => {
+      if (isProcessing) return;
       currentSection = 'import';
       toggleTab(tabImport, true);
       toggleTab(tabExport, false);
@@ -57,29 +63,126 @@ window.initImportar_exportarView = function () {
   function setupDropZone(dzId, fiId, handler) {
     const dz = document.getElementById(dzId);
     const fi = document.getElementById(fiId);
-    dz.addEventListener('click',   () => fi.click());
-    fi.addEventListener('change', e => e.target.files[0] && handler(e.target.files[0]));
+    
+    dz.addEventListener('click', () => {
+      if (isProcessing) return;
+      fi.click();
+    });
+    
+    fi.addEventListener('change', e => {
+      if (e.target.files[0] && !isProcessing) {
+        handler(e.target.files[0]);
+      }
+    });
+    
     dz.addEventListener('dragover', e => {
+      if (isProcessing) return;
       e.preventDefault();
       dz.classList.add('border-blue-400','bg-blue-50');
     });
+    
     dz.addEventListener('dragleave', () => {
       dz.classList.remove('border-blue-400','bg-blue-50');
     });
+    
     dz.addEventListener('drop', e => {
+      if (isProcessing) return;
       e.preventDefault();
       dz.classList.remove('border-blue-400','bg-blue-50');
-      e.dataTransfer.files[0] && handler(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files[0]) {
+        handler(e.dataTransfer.files[0]);
+      }
     });
   }
 
   /*** 3) BOTONES DE EXPORT ***/
   function setupEventListeners() {
-    document.getElementById('export-sqlite').addEventListener('click', exportSQLite);
-    document.getElementById('export-excel').addEventListener('click', exportExcel);
+    document.getElementById('export-sqlite').addEventListener('click', () => {
+      if (!isProcessing) exportSQLite();
+    });
+    document.getElementById('export-excel').addEventListener('click', () => {
+      if (!isProcessing) exportExcel();
+    });
   }
 
-  /*** 4) HELPERS UI ***/
+  /*** 4) OVERLAY DE CARGA GLOBAL ***/
+  function createGlobalLoadingOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'global-loading';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 hidden';
+    overlay.innerHTML = `
+      <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg p-8 shadow-2xl flex flex-col items-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">Procesando...</h3>
+          <p id="loading-message" class="text-gray-600 text-center">Preparando operación</p>
+          <div class="w-64 bg-gray-200 rounded-full h-2 mt-4">
+            <div id="global-progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  function showGlobalLoading(message, show = true) {
+    const overlay = document.getElementById('global-loading');
+    const messageEl = document.getElementById('loading-message');
+    const progressBar = document.getElementById('global-progress-bar');
+    
+    if (show) {
+      messageEl.textContent = message;
+      progressBar.style.width = '0%';
+      overlay.classList.remove('hidden');
+      isProcessing = true;
+      disableButtons(true);
+      
+      // Animación de progreso suave
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+      }, 200);
+      
+      // Guardar interval para poder limpiarlo
+      overlay.progressInterval = interval;
+    } else {
+      // Completar progreso
+      if (overlay.progressInterval) {
+        clearInterval(overlay.progressInterval);
+      }
+      progressBar.style.width = '100%';
+      
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        isProcessing = false;
+        disableButtons(false);
+        progressBar.style.width = '0%';
+      }, 500);
+    }
+  }
+
+  function updateGlobalLoadingMessage(message) {
+    const messageEl = document.getElementById('loading-message');
+    if (messageEl) {
+      messageEl.textContent = message;
+    }
+  }
+
+  function disableButtons(disabled) {
+    const buttons = document.querySelectorAll('button:not([data-keep-enabled])');
+    buttons.forEach(btn => {
+      btn.disabled = disabled;
+      if (disabled) {
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
+  }
+
+  /*** 5) HELPERS UI ***/
   function showStatus(type, msg, level = 'info') {
     const st  = document.getElementById(`${type}-status`);
     const tx  = document.getElementById(`${type}-message`);
@@ -148,92 +251,282 @@ window.initImportar_exportarView = function () {
     }
   }
 
-  /*** 5) EXPORTAR SQLITE ***/
-  async function exportSQLite() {
-    // CORREGIDO: usar __dirname en lugar de process.cwd()
-    const dbFile = path.join(__dirname, '..', '..', 'inventario.sqlite');
-    showStatus('export', '⏳ Exportando SQLite...', 'info');
-    showProgress('export');
+  /*** 6) FUNCIÓN AUXILIAR PARA SLEEP ***/
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
-    const { canceled, filePath } = await ipcRenderer.invoke('show-save-dialog', {
-      title: 'Guardar backup SQLite',
-      defaultPath: 'backup.sqlite'
-    });
-    if (!canceled) {
-      fs.copyFile(dbFile, filePath, err => {
-        if (err) showStatus('export', '❌ ' + err.message, 'error');
-        else {
-          showStatus('export', '✅ Backup SQLite creado', 'success');
-          addToHistory('export', '💾 backup.sqlite');
-        }
+  /*** 7) EXPORTAR SQLITE (MEJORADO) ***/
+  async function exportSQLite() {
+    const dbFile = path.join(__dirname, '..', '..', 'inventario.sqlite');
+    
+    showGlobalLoading('Iniciando exportación de base de datos SQLite...');
+    
+    try {
+      // Verificar que existe la base de datos
+      await sleep(300);
+      updateGlobalLoadingMessage('Verificando integridad de la base de datos...');
+      
+      await sleep(500);
+      updateGlobalLoadingMessage('Preparando archivo de exportación...');
+
+      const { canceled, filePath } = await ipcRenderer.invoke('show-save-dialog', {
+        title: 'Guardar backup SQLite',
+        defaultPath: 'backup.sqlite'
       });
+
+      if (!canceled) {
+        await sleep(400);
+        updateGlobalLoadingMessage('Copiando datos...');
+        
+        // Usar promesa para fs.copyFile
+        await new Promise((resolve, reject) => {
+          fs.copyFile(dbFile, filePath, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+
+        await sleep(300);
+        updateGlobalLoadingMessage('Finalizando exportación...');
+        await sleep(200);
+
+        showGlobalLoading('', false);
+        showStatus('export', '✅ Backup SQLite creado exitosamente', 'success');
+        addToHistory('export', '💾 backup.sqlite');
+      } else {
+        showGlobalLoading('', false);
+      }
+    } catch (err) {
+      showGlobalLoading('', false);
+      showStatus('export', '❌ ' + err.message, 'error');
     }
   }
 
-  /*** 6) EXPORTAR A EXCEL ***/
+  /*** 8) EXPORTAR A EXCEL (MEJORADO) ***/
   async function exportExcel() {
-    // CORREGIDO: usar __dirname en lugar de process.cwd()
     const dbPath = path.join(__dirname, '..', '..', 'inventario.sqlite');
     const tables = Array.from(
       document.querySelectorAll('input[type="checkbox"]:checked'),
       cb => cb.value
     );
+    
     if (!tables.length) {
       showStatus('export', '⚠️ Selecciona al menos una tabla', 'warning');
       return;
     }
-    showStatus('export', `⏳ Exportando ${tables.length} tabla(s)...`, 'info');
-    showProgress('export');
 
-    const db = new sqlite3.Database(dbPath);
-    const wb = new ExcelJS.Workbook();
-    let pending = tables.length;
+    showGlobalLoading(`Iniciando exportación de ${tables.length} tabla(s) a Excel...`);
 
-    tables.forEach(tab => {
-      db.all(`SELECT * FROM ${tab}`, (err, rows) => {
-        if (!err) {
-          const ws = wb.addWorksheet(tab);
-          if (rows.length) {
-            ws.columns = Object.keys(rows[0]).map(k => ({ header: k, key: k }));
-            rows.forEach(r => ws.addRow(r));
-          }
-        }
-        if (--pending === 0) {
-          ipcRenderer.invoke('show-save-dialog', {
-            title: 'Guardar archivo Excel',
-            defaultPath: 'export.xlsx',
-            filters: [{ name: 'Excel', extensions: ['xlsx'] }]
-          }).then(({ canceled, filePath }) => {
-            if (!canceled) {
-              wb.xlsx.writeFile(filePath).then(() => {
-                showStatus('export', '✅ Excel exportado', 'success');
-                addToHistory('export', `📊 ${tables.length} tabla(s)`);
-                db.close();
-              });
+    try {
+      await sleep(200);
+      updateGlobalLoadingMessage('Conectando a la base de datos...');
+
+      const db = new sqlite3.Database(dbPath);
+      const wb = new ExcelJS.Workbook();
+
+      await sleep(400);
+      updateGlobalLoadingMessage('Leyendo estructura de tablas...');
+
+      // Procesar cada tabla de forma asíncrona
+      for (let i = 0; i < tables.length; i++) {
+        const tableName = tables[i];
+        updateGlobalLoadingMessage(`Procesando tabla: ${tableName}...`);
+        
+        await new Promise((resolve, reject) => {
+          db.all(`SELECT * FROM ${tableName}`, (err, rows) => {
+            if (err) {
+              reject(err);
+            } else {
+              const ws = wb.addWorksheet(tableName);
+              if (rows.length) {
+                ws.columns = Object.keys(rows[0]).map(k => ({ header: k, key: k }));
+                rows.forEach(r => ws.addRow(r));
+              }
+              resolve();
             }
           });
-        }
+        });
+
+        await sleep(200); // Pequeña pausa entre tablas
+      }
+
+      await sleep(300);
+      updateGlobalLoadingMessage('Generando archivo Excel...');
+
+      const { canceled, filePath } = await ipcRenderer.invoke('show-save-dialog', {
+        title: 'Guardar archivo Excel',
+        defaultPath: 'export.xlsx',
+        filters: [{ name: 'Excel', extensions: ['xlsx'] }]
       });
-    });
+
+      if (!canceled) {
+        await sleep(400);
+        updateGlobalLoadingMessage('Guardando archivo...');
+        
+        await wb.xlsx.writeFile(filePath);
+        
+        await sleep(300);
+        updateGlobalLoadingMessage('Finalizando proceso...');
+        await sleep(200);
+
+        showGlobalLoading('', false);
+        showStatus('export', '✅ Excel exportado exitosamente', 'success');
+        addToHistory('export', `📊 ${tables.length} tabla(s) exportadas`);
+      } else {
+        showGlobalLoading('', false);
+      }
+
+      db.close();
+    } catch (err) {
+      showGlobalLoading('', false);
+      showStatus('export', '❌ Error al exportar: ' + err.message, 'error');
+    }
   }
 
-  /*** 7) IMPORTAR SQLITE ***/
-  function handleSQLiteFile(file) {
-    // CORREGIDO: usar __dirname en lugar de process.cwd()
+  /*** 9) IMPORTAR SQLITE (MEJORADO) ***/
+  async function handleSQLiteFile(file) {
     const dest = path.join(__dirname, '..', '..', 'inventario.sqlite');
+    
     if (!/\.(sqlite|db)$/i.test(file.name)) {
-      showStatus('import', '❌ Solo .sqlite/.db', 'error');
+      showStatus('import', '❌ Solo archivos .sqlite/.db', 'error');
       return;
     }
-    showStatus('import', '⏳ Importando SQLite...', 'info');
-    showProgress('import');
 
-    fs.copyFile(file.path, dest, err => {
-      if (err) showStatus('import', '❌ ' + err.message, 'error');
-      else {
-        showStatus('import', '✅ Importación SQLite completa', 'success');
-        addToHistory('import', '💾 ' + file.name);
+    showGlobalLoading('Validando archivo SQLite...');
+
+    try {
+      await sleep(300);
+      updateGlobalLoadingMessage('Verificando integridad del archivo...');
+      
+      await sleep(500);
+      updateGlobalLoadingMessage('Creando respaldo de seguridad...');
+      
+      await sleep(700);
+      updateGlobalLoadingMessage('Importando base de datos...');
+
+      // Usar promesa para fs.copyFile
+      await new Promise((resolve, reject) => {
+        fs.copyFile(file.path, dest, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      await sleep(400);
+      updateGlobalLoadingMessage('Verificando importación...');
+      
+      await sleep(300);
+      updateGlobalLoadingMessage('Finalizando proceso...');
+      await sleep(200);
+
+      showGlobalLoading('', false);
+      showStatus('import', '✅ Importación SQLite completa', 'success');
+      addToHistory('import', '💾 ' + file.name);
+    } catch (err) {
+      showGlobalLoading('', false);
+      showStatus('import', '❌ ' + err.message, 'error');
+    }
+  }
+
+  /*** 10) FUNCIONES DE CARGA GLOBAL ***/
+  function createGlobalLoadingOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'global-loading';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 hidden';
+    overlay.innerHTML = `
+      <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg p-8 shadow-2xl flex flex-col items-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">Procesando...</h3>
+          <p id="loading-message" class="text-gray-600 text-center">Preparando operación</p>
+          <div class="w-64 bg-gray-200 rounded-full h-2 mt-4">
+            <div id="global-progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  function showGlobalLoading(message, show = true) {
+    const overlay = document.getElementById('global-loading');
+    const messageEl = document.getElementById('loading-message');
+    const progressBar = document.getElementById('global-progress-bar');
+    
+    if (show) {
+      messageEl.textContent = message;
+      progressBar.style.width = '0%';
+      overlay.classList.remove('hidden');
+      isProcessing = true;
+      disableButtons(true);
+      
+      // Animación de progreso suave
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+      }, 200);
+      
+      // Guardar interval para poder limpiarlo
+      overlay.progressInterval = interval;
+    } else {
+      // Completar progreso
+      if (overlay.progressInterval) {
+        clearInterval(overlay.progressInterval);
+      }
+      progressBar.style.width = '100%';
+      
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        isProcessing = false;
+        disableButtons(false);
+        progressBar.style.width = '0%';
+      }, 500);
+    }
+  }
+
+  function updateGlobalLoadingMessage(message) {
+    const messageEl = document.getElementById('loading-message');
+    if (messageEl) {
+      messageEl.textContent = message;
+    }
+  }
+
+  function disableButtons(disabled) {
+    const buttons = document.querySelectorAll('button:not([data-keep-enabled])');
+    buttons.forEach(btn => {
+      btn.disabled = disabled;
+      if (disabled) {
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
       }
     });
   }
+
+  /*** 11) FUNCIÓN AUXILIAR PARA SLEEP ***/
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /*** 12) MANEJO DE ERRORES GLOBAL ***/
+  window.addEventListener('error', function(e) {
+    if (isProcessing) {
+      showGlobalLoading('', false);
+      showStatus(currentSection, '❌ Error inesperado durante el proceso', 'error');
+    }
+  });
+
+  // Prevenir cierre accidental durante procesamiento
+  window.addEventListener('beforeunload', function(e) {
+    if (isProcessing) {
+      e.preventDefault();
+      e.returnValue = 'Hay una operación en progreso. ¿Estás seguro de que quieres salir?';
+      return e.returnValue;
+    }
+  });
+
+  console.log('📊 Sistema de Exportar/Importar inicializado con carga mejorada');
 };
