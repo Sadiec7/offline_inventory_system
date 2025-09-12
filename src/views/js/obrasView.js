@@ -38,11 +38,40 @@ window.initObrasView = function () {
             <button data-id="${o.id}" class="text-red-500 hover:underline">Eliminar</button>
           `;
           // Selección para editar
-          li.addEventListener('click', () => selectObra(o));
-          // Eliminar
+          li.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+              selectObra(o);
+            }
+          });
+          
+          // Eliminar con confirmación usando SweetAlert
           li.querySelector('button').addEventListener('click', e => {
             e.stopPropagation();
-            obraController.eliminar(o.id, cargarLista);
+            
+            // Usar SweetAlert en lugar de confirm() nativo
+            Swal.fire({
+              title: '¿Eliminar obra?',
+              text: `¿Estás seguro de eliminar la obra "${o.nombre}" [${o.codigo}]?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'Sí, eliminar',
+              cancelButtonText: 'Cancelar',
+              allowOutsideClick: true,
+              allowEscapeKey: true
+            }).then((result) => {
+              if (result.isConfirmed) {
+                obraController.eliminar(o.id, (err) => {
+                  if (err) {
+                    Swal.fire('Error', 'No se pudo eliminar la obra', 'error');
+                  } else {
+                    Swal.fire('Eliminada', 'La obra ha sido eliminada correctamente', 'success');
+                    cargarLista();
+                  }
+                });
+              }
+            });
           });
           ul.appendChild(li);
         });
@@ -75,7 +104,15 @@ window.initObrasView = function () {
     document.getElementById('presupuesto').value = o.presupuesto || '';
     const archivoSel = document.getElementById('archivo');
     if (archivoSel) archivoSel.value = o.archivo || 'RECIENTE';
-    Swal.fire('Obra seleccionada', `${o.nombre} (${o.codigo})`, 'info');
+    
+    // Usar SweetAlert para la confirmación
+    Swal.fire({
+      title: 'Obra seleccionada',
+      text: `${o.nombre} (${o.codigo})`,
+      icon: 'info',
+      timer: 2000,
+      showConfirmButton: false
+    });
   }
 
   // Búsqueda activa
@@ -86,7 +123,13 @@ window.initObrasView = function () {
     if (match) {
       selectObra(match);
     } else {
-      Swal.fire('No encontrada', 'No existe esa obra.', 'error');
+      Swal.fire({
+        title: 'No encontrada',
+        text: 'No existe esa obra.',
+        icon: 'error',
+        timer: 3000,
+        showConfirmButton: false
+      });
     }
   }
 
@@ -109,25 +152,71 @@ window.initObrasView = function () {
         municipio: document.getElementById('municipio').value.trim(),
         presupuesto: parseFloat(document.getElementById('presupuesto').value) || 0
       };
+      
       if (!datos.codigo || !datos.nombre) {
-        Swal.fire('Datos incompletos', 'Debes ingresar código y nombre.', 'warning');
+        Swal.fire({
+          title: 'Datos incompletos',
+          text: 'Debes ingresar código y nombre.',
+          icon: 'warning',
+          confirmButtonText: 'Entendido'
+        });
         return;
       }
+      
       if (validarDuplicado(datos.codigo)) {
-        Swal.fire('Código duplicado', 'Ya existe una obra con ese código.', 'error');
+        Swal.fire({
+          title: 'Código duplicado',
+          text: 'Ya existe una obra con ese código.',
+          icon: 'error',
+          confirmButtonText: 'Entendido'
+        });
         return;
       }
-      obraController.guardar(datos, () => {
-        idSel = null;
-        ['codigo','nombre','localidad','municipio','presupuesto'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('archivo').value = 'RECIENTE';
-        cargarLista();
+      
+      // Mostrar loading
+      Swal.fire({
+        title: 'Guardando...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      
+      obraController.guardar(datos, (err) => {
+        if (err) {
+          Swal.fire('Error', 'No se pudo guardar la obra', 'error');
+        } else {
+          Swal.fire({
+            title: 'Éxito',
+            text: 'Obra guardada correctamente',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          
+          idSel = null;
+          ['codigo','nombre','localidad','municipio','presupuesto'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.value = '';
+          });
+          const archivoElement = document.getElementById('archivo');
+          if (archivoElement) archivoElement.value = 'RECIENTE';
+          cargarLista();
+        }
       });
     });
+    
     btnNuevo.addEventListener('click', () => {
       idSel = null;
-      ['codigo','nombre','localidad','municipio','presupuesto'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('archivo').value = 'RECIENTE';
+      ['codigo','nombre','localidad','municipio','presupuesto'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = '';
+      });
+      const archivoElement = document.getElementById('archivo');
+      if (archivoElement) archivoElement.value = 'RECIENTE';
     });
   } else {
     console.warn('[obrasView.js] No se encontraron los botones "guardar" o "nuevo"');
@@ -135,7 +224,14 @@ window.initObrasView = function () {
 
   // Eventos búsqueda
   if (btnBuscar) btnBuscar.addEventListener('click', buscarObra);
-  if (inputBuscar) inputBuscar.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarObra(); } });
+  if (inputBuscar) {
+    inputBuscar.addEventListener('keydown', e => { 
+      if (e.key === 'Enter') { 
+        e.preventDefault(); 
+        buscarObra(); 
+      } 
+    });
+  }
 
   cargarLista();
 };

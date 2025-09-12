@@ -2,44 +2,119 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proveedores</title>
   <link rel="stylesheet" href="./css/tailwind.css" />
   <script defer src="js/proveedoresView.js"></script>
+  <style>
+    /* Truncar texto largo en tabla */
+    .truncate-text {
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Tooltip para mostrar texto completo */
+    .truncate-text[title]:hover {
+      cursor: help;
+    }
+
+    /* Estilos para tabla responsive */
+    @media (max-width: 768px) {
+      .table-container {
+        overflow-x: auto;
+      }
+      
+      .responsive-table thead {
+        display: none;
+      }
+      
+      .responsive-table,
+      .responsive-table tbody,
+      .responsive-table tr,
+      .responsive-table td {
+        display: block;
+        width: 100%;
+      }
+      
+      .responsive-table tr {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      
+      .responsive-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        text-align: right;
+      }
+      
+      .responsive-table td:last-child {
+        border-bottom: none;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      
+      .responsive-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #374151;
+        flex: 1;
+        text-align: left;
+      }
+      
+      /* En móvil, permitir que el texto se ajuste */
+      .responsive-table .truncate-text {
+        max-width: none;
+        white-space: normal;
+        word-break: break-word;
+      }
+    }
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
-  <div class="max-w-7xl mx-auto p-6 flex-1">
+  <div class="max-w-7xl mx-auto p-4 sm:p-6 flex-1">
 
     <!-- Cabecera: título + botón Nuevo -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-semibold text-gray-700">Gestión de Proveedores</h1>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <h1 class="text-xl sm:text-2xl font-semibold text-gray-700">Gestión de Proveedores</h1>
       <button id="btnNuevo" 
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+              class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
         + Nuevo Proveedor
       </button>
     </div>
 
     <!-- Tabla de proveedores -->
     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RFC</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
-            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tblProveedores" class="bg-white divide-y divide-gray-200">
-          <!-- Filas inyectadas vía proveedoresView.js -->
-        </tbody>
-      </table>
+      <div class="table-container">
+        <table class="responsive-table min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RFC</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tblProveedores" class="bg-white divide-y divide-gray-200">
+            <!-- Filas inyectadas vía proveedoresView.js -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <!-- Modal Alta/Edición Proveedor -->
-  <div id="modalForm" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+  <div id="modalForm" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
       <h2 id="formTitle" class="text-xl font-semibold mb-4">Nuevo Proveedor</h2>
       <form id="proveedorForm" class="space-y-4">
@@ -66,7 +141,7 @@
                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
         </div>
 
-        <div class="flex justify-end space-x-2 pt-4">
+        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
           <button type="button" id="btnCancelar"
                   class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
             Cancelar

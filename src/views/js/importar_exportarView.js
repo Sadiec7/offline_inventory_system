@@ -2,6 +2,7 @@
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
 
+
 const sqlite3 = require('sqlite3').verbose();
 const ExcelJS = require('exceljs');
 
@@ -105,7 +106,20 @@ window.initImportar_exportarView = function () {
     });
   }
 
-  /*** 4) OVERLAY DE CARGA GLOBAL ***/
+  /*** 4) FUNCIÓN PARA FORMATEAR FECHA PARA NOMBRES DE ARCHIVO ***/
+  function getFormattedDateForFilename() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+  }
+
+  /*** 5) OVERLAY DE CARGA GLOBAL ***/
   function createGlobalLoadingOverlay() {
     const overlay = document.createElement('div');
     overlay.id = 'global-loading';
@@ -182,7 +196,7 @@ window.initImportar_exportarView = function () {
     });
   }
 
-  /*** 5) HELPERS UI ***/
+  /*** 6) HELPERS UI ***/
   function showStatus(type, msg, level = 'info') {
     const st  = document.getElementById(`${type}-status`);
     const tx  = document.getElementById(`${type}-message`);
@@ -251,15 +265,16 @@ window.initImportar_exportarView = function () {
     }
   }
 
-  /*** 6) FUNCIÓN AUXILIAR PARA SLEEP ***/
+  /*** 7) FUNCIÓN AUXILIAR PARA SLEEP ***/
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /*** 7) EXPORTAR SQLITE (MEJORADO) ***/
+  /*** 8) EXPORTAR SQLITE (CORREGIDO) ***/
   async function exportSQLite() {
     const dbFile = path.join(__dirname, '..', '..', 'inventario.sqlite');
-    
+    const formattedDate = getFormattedDateForFilename();
+
     showGlobalLoading('Iniciando exportación de base de datos SQLite...');
     
     try {
@@ -272,7 +287,11 @@ window.initImportar_exportarView = function () {
 
       const { canceled, filePath } = await ipcRenderer.invoke('show-save-dialog', {
         title: 'Guardar backup SQLite',
-        defaultPath: 'backup.sqlite'
+        defaultPath: `backup_inventario_${formattedDate}.sqlite`,
+        filters: [
+          { name: 'Bases de datos SQLite', extensions: ['sqlite', 'db'] },
+          { name: 'Todos los archivos', extensions: ['*'] }
+        ]
       });
 
       if (!canceled) {
@@ -293,7 +312,7 @@ window.initImportar_exportarView = function () {
 
         showGlobalLoading('', false);
         showStatus('export', '✅ Backup SQLite creado exitosamente', 'success');
-        addToHistory('export', '💾 backup.sqlite');
+        addToHistory('export', `💾 backup_inventario_${formattedDate}.sqlite`);
       } else {
         showGlobalLoading('', false);
       }
@@ -303,9 +322,10 @@ window.initImportar_exportarView = function () {
     }
   }
 
-  /*** 8) EXPORTAR A EXCEL (MEJORADO) ***/
+  /*** 9) EXPORTAR A EXCEL (MEJORADO) ***/
   async function exportExcel() {
     const dbPath = path.join(__dirname, '..', '..', 'inventario.sqlite');
+    const formattedDate = getFormattedDateForFilename();
     const tables = Array.from(
       document.querySelectorAll('input[type="checkbox"]:checked'),
       cb => cb.value
@@ -356,7 +376,7 @@ window.initImportar_exportarView = function () {
 
       const { canceled, filePath } = await ipcRenderer.invoke('show-save-dialog', {
         title: 'Guardar archivo Excel',
-        defaultPath: 'export.xlsx',
+        defaultPath: `inventario_export_${formattedDate}.xlsx`,
         filters: [{ name: 'Excel', extensions: ['xlsx'] }]
       });
 
@@ -372,7 +392,7 @@ window.initImportar_exportarView = function () {
 
         showGlobalLoading('', false);
         showStatus('export', '✅ Excel exportado exitosamente', 'success');
-        addToHistory('export', `📊 ${tables.length} tabla(s) exportadas`);
+        addToHistory('export', `📊 ${tables.length} tabla(s) exportadas - ${formattedDate}`);
       } else {
         showGlobalLoading('', false);
       }
@@ -384,9 +404,10 @@ window.initImportar_exportarView = function () {
     }
   }
 
-  /*** 9) IMPORTAR SQLITE (MEJORADO) ***/
+  /*** 10) IMPORTAR SQLITE (MEJORADO) ***/
   async function handleSQLiteFile(file) {
     const dest = path.join(__dirname, '..', '..', 'inventario.sqlite');
+    const backupDate = getFormattedDateForFilename();
     
     if (!/\.(sqlite|db)$/i.test(file.name)) {
       showStatus('import', '❌ Solo archivos .sqlite/.db', 'error');
@@ -402,10 +423,21 @@ window.initImportar_exportarView = function () {
       await sleep(500);
       updateGlobalLoadingMessage('Creando respaldo de seguridad...');
       
+      // Crear backup del archivo actual antes de importar
+      const backupPath = path.join(__dirname, '..', '..', `inventario_backup_${backupDate}.sqlite`);
+      if (fs.existsSync(dest)) {
+        await new Promise((resolve, reject) => {
+          fs.copyFile(dest, backupPath, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      }
+      
       await sleep(700);
       updateGlobalLoadingMessage('Importando base de datos...');
 
-      // Usar promesa para fs.copyFile
+      // Importar el nuevo archivo
       await new Promise((resolve, reject) => {
         fs.copyFile(file.path, dest, (err) => {
           if (err) reject(err);
@@ -421,97 +453,15 @@ window.initImportar_exportarView = function () {
       await sleep(200);
 
       showGlobalLoading('', false);
-      showStatus('import', '✅ Importación SQLite completa', 'success');
-      addToHistory('import', '💾 ' + file.name);
+      showStatus('import', '✅ Importación SQLite completa. Backup creado automáticamente.', 'success');
+      addToHistory('import', `💾 ${file.name} - ${backupDate}`);
     } catch (err) {
       showGlobalLoading('', false);
       showStatus('import', '❌ ' + err.message, 'error');
     }
   }
 
-  /*** 10) FUNCIONES DE CARGA GLOBAL ***/
-  function createGlobalLoadingOverlay() {
-    const overlay = document.createElement('div');
-    overlay.id = 'global-loading';
-    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 hidden';
-    overlay.innerHTML = `
-      <div class="flex items-center justify-center h-full">
-        <div class="bg-white rounded-lg p-8 shadow-2xl flex flex-col items-center">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <h3 class="text-lg font-semibold text-gray-800 mb-2">Procesando...</h3>
-          <p id="loading-message" class="text-gray-600 text-center">Preparando operación</p>
-          <div class="w-64 bg-gray-200 rounded-full h-2 mt-4">
-            <div id="global-progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-  }
-
-  function showGlobalLoading(message, show = true) {
-    const overlay = document.getElementById('global-loading');
-    const messageEl = document.getElementById('loading-message');
-    const progressBar = document.getElementById('global-progress-bar');
-    
-    if (show) {
-      messageEl.textContent = message;
-      progressBar.style.width = '0%';
-      overlay.classList.remove('hidden');
-      isProcessing = true;
-      disableButtons(true);
-      
-      // Animación de progreso suave
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 15;
-        if (progress > 90) progress = 90;
-        progressBar.style.width = progress + '%';
-      }, 200);
-      
-      // Guardar interval para poder limpiarlo
-      overlay.progressInterval = interval;
-    } else {
-      // Completar progreso
-      if (overlay.progressInterval) {
-        clearInterval(overlay.progressInterval);
-      }
-      progressBar.style.width = '100%';
-      
-      setTimeout(() => {
-        overlay.classList.add('hidden');
-        isProcessing = false;
-        disableButtons(false);
-        progressBar.style.width = '0%';
-      }, 500);
-    }
-  }
-
-  function updateGlobalLoadingMessage(message) {
-    const messageEl = document.getElementById('loading-message');
-    if (messageEl) {
-      messageEl.textContent = message;
-    }
-  }
-
-  function disableButtons(disabled) {
-    const buttons = document.querySelectorAll('button:not([data-keep-enabled])');
-    buttons.forEach(btn => {
-      btn.disabled = disabled;
-      if (disabled) {
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
-      } else {
-        btn.classList.remove('opacity-50', 'cursor-not-allowed');
-      }
-    });
-  }
-
-  /*** 11) FUNCIÓN AUXILIAR PARA SLEEP ***/
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /*** 12) MANEJO DE ERRORES GLOBAL ***/
+  /*** 11) MANEJO DE ERRORES GLOBAL ***/
   window.addEventListener('error', function(e) {
     if (isProcessing) {
       showGlobalLoading('', false);
@@ -528,5 +478,5 @@ window.initImportar_exportarView = function () {
     }
   });
 
-  console.log('📊 Sistema de Exportar/Importar inicializado con carga mejorada');
+  console.log('📊 Sistema de Exportar/Importar inicializado con fecha automática');
 };

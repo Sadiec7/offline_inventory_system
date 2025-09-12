@@ -1,4 +1,3 @@
-
 const provCtrl = require(path.join(__dirname, '..', 'controllers', 'proveedorController'));
 window.initProveedoresView = async function() {
   const tblBody     = document.getElementById('tblProveedores');
@@ -71,11 +70,19 @@ window.initProveedoresView = async function() {
     list.forEach(p => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap">${p.nombre}</td>
-        <td class="px-6 py-4 whitespace-nowrap">${p.rfc}</td>
-        <td class="px-6 py-4 whitespace-nowrap">${p.direccion || ''}</td>
-        <td class="px-6 py-4 whitespace-nowrap">${p.telefono || ''}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-center">
+        <td class="px-6 py-4 whitespace-nowrap" data-label="Nombre:">
+          <div class="truncate-text" title="${p.nombre}">${p.nombre}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap" data-label="RFC:">
+          <div class="truncate-text" title="${p.rfc}">${p.rfc}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap" data-label="Dirección:">
+          <div class="truncate-text" title="${p.direccion || ''}">${p.direccion || ''}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap" data-label="Teléfono:">
+          <div class="truncate-text" title="${p.telefono || ''}">${p.telefono || ''}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-center" data-label="Acciones:">
           <button data-id="${p.id}" class="edit text-blue-600 hover:underline mr-2">Editar</button>
           <button data-id="${p.id}" class="del text-red-600 hover:underline">Eliminar</button>
         </td>`;
