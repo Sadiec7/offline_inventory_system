@@ -157,100 +157,156 @@ function generarHTMLReporte(obra, compras, proveedores, insumos) {
   const insumosMap = {};
   insumos.forEach(i => insumosMap[i.id] = i);
   
-  // Calcular total
+  // Agrupar compras por categoría de insumo
+  const comprasPorCategoria = {};
+  const categorias = new Set();
+  
+  compras.forEach(compra => {
+    const insumo = insumosMap[compra.insumo_id];
+    const categoriaNombre = insumo?.categoria_nombre || insumo?.categoria || 'SIN CATEGORÍA';
+    const categoriaId = insumo?.categoria_id || 0;
+    
+    categorias.add(categoriaId);
+    
+    if (!comprasPorCategoria[categoriaId]) {
+      comprasPorCategoria[categoriaId] = {
+        nombre: categoriaNombre,
+        compras: [],
+        totalCantidad: 0,
+        totalImporte: 0
+      };
+    }
+    
+    comprasPorCategoria[categoriaId].compras.push(compra);
+    comprasPorCategoria[categoriaId].totalCantidad += (compra.cantidad || 0);
+    comprasPorCategoria[categoriaId].totalImporte += (compra.importe || 0);
+  });
+  
+  // Calcular total general
   const totalCantidad = compras.reduce((sum, c) => sum + (c.cantidad || 0), 0);
   const totalImporte = compras.reduce((sum, c) => sum + (c.importe || 0), 0);
   
-  // Generar filas de la tabla
+  // Generar filas de la tabla agrupadas por categoría
   let filasHTML = '';
-  compras.forEach(compra => {
-    const proveedor = proveedoresMap[compra.proveedor_id];
-    const insumo = insumosMap[compra.insumo_id];
-    const fechaFormateada = new Date(compra.fecha).toLocaleDateString('es-MX');
+  
+  // Ordenar categorías (primero las que tienen ID, luego sin categoría)
+  const categoriasOrdenadas = Array.from(categorias).sort((a, b) => {
+    if (a === 0) return 1; // Sin categoría al final
+    if (b === 0) return -1;
+    return a - b;
+  });
+  
+  categoriasOrdenadas.forEach(categoriaId => {
+    const grupo = comprasPorCategoria[categoriaId];
     
+    // Fila de encabezado de categoría
     filasHTML += `
-      <tr>
-        <td style="padding: 6px; border: 1px solid #000; font-size: 11px;">${obra.codigo || 'N/A'}</td>
-        <td style="padding: 6px; border: 1px solid #000; font-size: 11px;">${insumo?.nombre || 'N/A'}</td>
-        <td style="padding: 6px; border: 1px solid #000; text-align: center; font-size: 11px;">${insumo?.unidad || 'N/A'}</td>
-        <td style="padding: 6px; border: 1px solid #000; text-align: right; font-size: 11px;">${compra.cantidad || 0}</td>
-        <td style="padding: 6px; border: 1px solid #000; text-align: right; font-size: 11px;">$ ${(compra.importe || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-        <td style="padding: 6px; border: 1px solid #000; text-align: center; font-size: 11px;">${fechaFormateada}</td>
-        <td style="padding: 6px; border: 1px solid #000; text-align: center; font-size: 11px;">${compra.pedido || 'N/A'}</td>
-        <td style="padding: 6px; border: 1px solid #000; font-size: 11px;">${proveedor?.nombre || compra.proveedor_id || 'N/A'}</td>
+      <tr style="background-color: #e8e8e8;">
+        <td colspan="8" style="padding: 3px 5px; border: 1px solid #000; font-size: 8px; font-weight: bold; line-height: 1.2;">
+          ${grupo.nombre.toUpperCase()}
+        </td>
+      </tr>
+    `;
+    
+    // Filas de compras de esta categoría
+    grupo.compras.forEach(compra => {
+      const proveedor = proveedoresMap[compra.proveedor_id];
+      const insumo = insumosMap[compra.insumo_id];
+      const fechaFormateada = new Date(compra.fecha).toLocaleDateString('es-MX');
+      
+      filasHTML += `
+        <tr>
+          <td style="padding: 2px 3px; border: 1px solid #000; font-size: 7px; line-height: 1.2;">${obra.codigo || 'N/A'}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; font-size: 7px; line-height: 1.2;">${insumo?.nombre || 'N/A'}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; text-align: center; font-size: 7px; line-height: 1.2;">${insumo?.unidad || 'N/A'}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; text-align: right; font-size: 7px; line-height: 1.2;">${compra.cantidad || 0}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; text-align: right; font-size: 7px; line-height: 1.2;">$ ${(compra.importe || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; text-align: center; font-size: 7px; line-height: 1.2;">${fechaFormateada}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; text-align: center; font-size: 7px; line-height: 1.2;">${compra.pedido || 'N/A'}</td>
+          <td style="padding: 2px 3px; border: 1px solid #000; font-size: 7px; line-height: 1.2;">${proveedor?.nombre || compra.proveedor_id || 'N/A'}</td>
+        </tr>
+      `;
+    });
+    
+    // Fila de subtotal de categoría
+    filasHTML += `
+      <tr style="background-color: #f5f5f5;">
+        <td colspan="3" style="padding: 2px 5px; border: 1px solid #000; text-align: right; font-size: 7px; font-weight: bold; line-height: 1.2;">Subtotal ${grupo.nombre}:</td>
+        <td style="padding: 2px 3px; border: 1px solid #000; text-align: right; font-size: 7px; font-weight: bold; line-height: 1.2;">${grupo.totalCantidad.toLocaleString()}</td>
+        <td style="padding: 2px 3px; border: 1px solid #000; text-align: right; font-size: 7px; font-weight: bold; line-height: 1.2;">$ ${grupo.totalImporte.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+        <td colspan="3" style="padding: 2px 3px; border: 1px solid #000; font-size: 7px;"></td>
       </tr>
     `;
   });
   
   const reporteHTML = `
-    <div style="max-width: 100%; margin: 0 auto; background: white; padding: 20px; font-family: Arial, sans-serif;">
-      <!-- Encabezado -->
-      <div style="display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px;">
-        <div style="flex: 0 0 100px; margin-right: 20px;">
-          <!-- Logo genérico -->
-          <div style="width: 80px; height: 60px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; text-align: center;">
+    <div style="max-width: 100%; margin: 0; background: white; padding: 8px; font-family: Arial, sans-serif;">
+      <!-- Encabezado compacto -->
+      <div style="display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #000; padding-bottom: 6px;">
+        <div style="flex: 0 0 70px; margin-right: 12px;">
+          <div style="width: 60px; height: 45px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 7px; text-align: center;">
             <img src="../../assets/cronos logo.jpg" style="max-width: 100%; max-height: 100%;"><br>
           </div>
         </div>
         
-        <div style="flex: 1; text-align: center;">
-          <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+        <div style="flex: 1; text-align: center; padding-top: 2px;">
+          <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px; line-height: 1.2;">
             Constructora e Inmobiliaria CRONOS S.A de C.V
           </div>
-          <div style="font-size: 12px; margin-bottom: 10px;">
+          <div style="font-size: 8px; margin-bottom: 3px; line-height: 1.1;">
             Diego Rivera No. 153 Santiago Miltepec, Toluca, México
           </div>
         </div>
         
-        <div style="flex: 0 0 200px; text-align: right;">
-          <div style="font-weight: bold; font-size: 12px;">
+        <div style="flex: 0 0 140px; text-align: right; padding-top: 2px;">
+          <div style="font-weight: bold; font-size: 8px; line-height: 1.3;">
             Fecha ACTUAL<br>
             ${fechaActual}
           </div>
         </div>
       </div>
       
-      <!-- Título del reporte -->
-      <div style="text-align: center; font-weight: bold; font-size: 14px; margin: 20px 0; border: 2px solid #000; padding: 8px;">
+      <!-- Título del reporte compacto -->
+      <div style="text-align: center; font-weight: bold; font-size: 10px; margin: 6px 0; border: 2px solid #000; padding: 4px; line-height: 1.2;">
         Detalle de insumos comprados
       </div>
       
-      <!-- Información de la obra -->
-      <div style="margin-bottom: 15px;">
+      <!-- Información de la obra compacta -->
+      <div style="margin-bottom: 6px; font-size: 8px;">
         <strong>Obra:</strong> ${obra.codigo} - ${obra.nombre}
       </div>
       
-      <!-- Tabla de datos -->
-      <table class="reporte-tabla" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+      <!-- Tabla de datos con formato compacto -->
+      <table class="reporte-tabla" style="width: 100%; border-collapse: collapse; margin-top: 4px;">
         <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Obra</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Nombre</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Unidad</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Cantidad</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Importe</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Fecha Pedido</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">No. De Pedido</th>
-            <th style="padding: 8px; border: 1px solid #000; font-size: 11px; font-weight: bold;">Proveedor</th>
+          <tr>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Obra</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Nombre</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Unidad</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Cantidad</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Importe</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Fecha<br>Pedido</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">No. De<br>Pedido</th>
+            <th style="padding: 3px 2px; border: 1px solid #000; font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1;">Proveedor</th>
           </tr>
         </thead>
         <tbody>
           ${filasHTML}
         </tbody>
         <tfoot>
-          <tr style="background-color: #f0f0f0; font-weight: bold;">
-            <td colspan="3" style="padding: 8px; border: 1px solid #000; text-align: center; font-size: 11px; font-weight: bold;">TOTAL:</td>
-            <td style="padding: 8px; border: 1px solid #000; text-align: right; font-size: 11px; font-weight: bold;">${totalCantidad.toLocaleString()}</td>
-            <td style="padding: 8px; border: 1px solid #000; text-align: right; font-size: 11px; font-weight: bold;">$ ${totalImporte.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-            <td colspan="3" style="padding: 8px; border: 1px solid #000; font-size: 11px;"></td>
+          <tr style="font-weight: bold;">
+            <td colspan="3" style="padding: 3px 2px; border: 1px solid #000; text-align: center; font-size: 7px; font-weight: bold;">TOTAL:</td>
+            <td style="padding: 3px 2px; border: 1px solid #000; text-align: right; font-size: 7px; font-weight: bold;">${totalCantidad.toLocaleString()}</td>
+            <td style="padding: 3px 2px; border: 1px solid #000; text-align: right; font-size: 7px; font-weight: bold;">$ ${totalImporte.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+            <td colspan="3" style="padding: 3px 2px; border: 1px solid #000; font-size: 7px;"></td>
           </tr>
         </tfoot>
       </table>
       
-      <!-- Información adicional -->
-      <div style="margin-top: 20px; font-size: 10px; color: #666;">
-        <p><strong>Reporte generado el:</strong> ${new Date().toLocaleString('es-MX')}</p>
-        <p><strong>Total de registros:</strong> ${compras.length}</p>
+      <!-- Información adicional compacta -->
+      <div style="margin-top: 6px; font-size: 7px; color: #333; line-height: 1.2;">
+        <p style="margin: 2px 0;"><strong>Reporte generado el:</strong> ${new Date().toLocaleString('es-MX')}</p>
+        <p style="margin: 2px 0;"><strong>Total de registros:</strong> ${compras.length} | <strong>Categorías:</strong> ${categoriasOrdenadas.length}</p>
       </div>
     </div>
   `;
@@ -276,29 +332,52 @@ function imprimirReporte() {
     <head>
       <title>Reporte de Compras - CRONOS</title>
       <style>
+        @page {
+          size: letter landscape;
+          margin: 0.4cm 0.4cm 0.4cm 0.4cm;
+        }
+        
+        * {
+          box-sizing: border-box;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
         body {
           font-family: Arial, sans-serif;
           margin: 0;
-          padding: 20px;
-          font-size: 12px;
+          padding: 6px;
+          font-size: 7pt;
+          line-height: 1.1;
         }
         
         table {
           width: 100%;
           border-collapse: collapse;
-          margin-top: 10px;
+          margin-top: 4px;
+          table-layout: fixed;
         }
         
         th, td {
           border: 1px solid #000;
-          padding: 4px;
+          padding: 2px 3px;
           text-align: left;
-          font-size: 10px;
+          font-size: 7pt;
+          line-height: 1.2;
+          overflow: hidden;
+          word-wrap: break-word;
         }
         
         th {
-          background-color: #f5f5f5;
+          background-color: transparent;
           font-weight: bold;
+          text-align: center;
+          vertical-align: middle;
+          padding: 3px 2px;
+        }
+        
+        td {
+          vertical-align: middle;
         }
         
         .text-right {
@@ -309,10 +388,28 @@ function imprimirReporte() {
           text-align: center;
         }
         
+        /* Ancho específico de columnas para escala 1:1 */
+        .reporte-tabla th:nth-child(1),
+        .reporte-tabla td:nth-child(1) { width: 7%; }  /* Obra */
+        .reporte-tabla th:nth-child(2),
+        .reporte-tabla td:nth-child(2) { width: 23%; }  /* Nombre */
+        .reporte-tabla th:nth-child(3),
+        .reporte-tabla td:nth-child(3) { width: 6%; }   /* Unidad */
+        .reporte-tabla th:nth-child(4),
+        .reporte-tabla td:nth-child(4) { width: 7%; }   /* Cantidad */
+        .reporte-tabla th:nth-child(5),
+        .reporte-tabla td:nth-child(5) { width: 10%; }  /* Importe */
+        .reporte-tabla th:nth-child(6),
+        .reporte-tabla td:nth-child(6) { width: 9%; }  /* Fecha */
+        .reporte-tabla th:nth-child(7),
+        .reporte-tabla td:nth-child(7) { width: 9%; }  /* No. Pedido */
+        .reporte-tabla th:nth-child(8),
+        .reporte-tabla td:nth-child(8) { width: 29%; }  /* Proveedor */
+        
         @media print {
           body {
             margin: 0;
-            padding: 15px;
+            padding: 6px;
           }
           
           table {
@@ -322,6 +419,14 @@ function imprimirReporte() {
           tr {
             page-break-inside: avoid;
             page-break-after: auto;
+          }
+          
+          thead {
+            display: table-header-group;
+          }
+          
+          tfoot {
+            display: table-footer-group;
           }
         }
       </style>

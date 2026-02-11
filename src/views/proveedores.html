@@ -77,6 +77,13 @@
         word-break: break-word;
       }
     }
+
+    /* Mejoras visuales para inputs */
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
@@ -87,9 +94,38 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <h1 class="text-xl sm:text-2xl font-semibold text-gray-700">Gestión de Proveedores</h1>
       <button id="btnNuevo" 
-              class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
-        + Nuevo Proveedor
+              class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-all hover:shadow-md active:scale-95">
+        <span class="flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo Proveedor
+        </span>
       </button>
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="mb-6 bg-white rounded-lg shadow-md p-4">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+        </svg>
+        <input 
+          type="text" 
+          id="buscarProveedor" 
+          placeholder="Buscar por nombre, RFC, dirección o teléfono..." 
+          class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+          autocomplete="off"
+        />
+        <button 
+          id="btnBuscar" 
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all hover:shadow-md active:scale-95">
+          Buscar
+        </button>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">
+        💡 Tip: La búsqueda filtra en tiempo real por cualquier campo. Presiona Enter para buscar.
+      </p>
     </div>
 
     <!-- Tabla de proveedores -->
@@ -98,15 +134,26 @@
         <table class="responsive-table min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RFC</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
-              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RFC</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody id="tblProveedores" class="bg-white divide-y divide-gray-200">
             <!-- Filas inyectadas vía proveedoresView.js -->
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center">
+                <div class="flex flex-col items-center gap-3">
+                  <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="text-gray-500">Cargando proveedores...</span>
+                </div>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -114,46 +161,101 @@
   </div>
 
   <!-- Modal Alta/Edición Proveedor -->
-  <div id="modalForm" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-      <h2 id="formTitle" class="text-xl font-semibold mb-4">Nuevo Proveedor</h2>
+  <div id="modalForm" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 animate-modal-in">
+      <h2 id="formTitle" class="text-xl font-semibold mb-4 text-gray-800">Nuevo Proveedor</h2>
       <form id="proveedorForm" class="space-y-4">
         <input type="hidden" id="proveedorId" />
 
         <div>
-          <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-          <input type="text" id="nombre" name="nombre" required
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div>
-          <label for="rfc" class="block text-sm font-medium text-gray-700">RFC</label>
-          <input type="text" id="rfc" name="rfc" required
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div>
-          <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección</label>
-          <input type="text" id="direccion" name="direccion"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div>
-          <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
-          <input type="text" id="telefono" name="telefono"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">
+            Nombre <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="nombre" 
+            name="nombre" 
+            required
+            placeholder="Ej: Constructora ABC S.A. de C.V."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" 
+          />
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
-          <button type="button" id="btnCancelar"
-                  class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+        <div>
+          <label for="rfc" class="block text-sm font-medium text-gray-700 mb-1">
+            RFC <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="rfc" 
+            name="rfc" 
+            required
+            placeholder="Ej: ABC123456XYZ"
+            maxlength="13"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all uppercase" 
+          />
+        </div>
+
+        <div>
+          <label for="direccion" class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+          <input 
+            type="text" 
+            id="direccion" 
+            name="direccion"
+            placeholder="Ej: Av. Principal #123, Col. Centro"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" 
+          />
+        </div>
+
+        <div>
+          <label for="telefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+          <input 
+            type="tel" 
+            id="telefono" 
+            name="telefono"
+            placeholder="Ej: (555) 123-4567"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" 
+          />
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+          <button 
+            type="button" 
+            id="btnCancelar"
+            class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all active:scale-95">
             Cancelar
           </button>
-          <button type="submit"
-                  class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
-            Guardar
+          <button 
+            type="submit"
+            class="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all hover:shadow-md active:scale-95">
+            <span class="flex items-center justify-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              Guardar
+            </span>
           </button>
         </div>
       </form>
     </div>
   </div>
+
+  <style>
+    @keyframes modal-in {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .animate-modal-in {
+      animation: modal-in 0.2s ease-out;
+    }
+  </style>
 
 </body>
 </html>
